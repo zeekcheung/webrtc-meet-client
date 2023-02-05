@@ -4,4 +4,18 @@
 
 #root {
   height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(45deg, #bb3fdc, #ff9f7c);
+}
+
+.ant-avatar:hover {
+  cursor: pointer;
+}
+
+.ant-popover-1inner-content span {
+  font-weight: 500;
+}
+
+.logo-space > .ant-space-item:first-child {
+  transform: translateY(0.5rem);
 }

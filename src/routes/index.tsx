@@ -1,35 +1,48 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, RouteObject } from 'react-router-dom'
+import App from '../App'
+import { ErrorPage } from '../pages/Error'
 import { Home } from '../pages/Home'
-import { Login } from '../pages/Login'
-import { Register } from '../pages/Register'
-import { AudioRoom } from '../pages/Room/audio-room'
-import { TextRoom } from '../pages/Room/text-room'
-import { VideoRoom } from '../pages/Room/video-room'
+import { NotFound } from '../pages/NotFound'
+import { Profile } from '../pages/Profile'
+import { Room } from '../pages/Room'
+import { SignIn } from '../pages/SignIn'
+import { SignUp } from '../pages/SignUp'
+import { PROFILE_PATH, ROOM_PATH, SIGN_IN_PATH, SIGN_UP_PATH } from '../utils/constant'
 
-export const router = createBrowserRouter([
+const routes: RouteObject[] = [
   {
     path: '/',
-    element: <Home />,
-    index: true,
+    element: <App />,
+    // error
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: SIGN_UP_PATH,
+        element: <SignUp />,
+      },
+      {
+        path: SIGN_IN_PATH,
+        element: <SignIn />,
+      },
+      {
+        path: PROFILE_PATH,
+        element: <Profile />,
+      },
+      {
+        path: ROOM_PATH,
+        element: <Room />,
+      },
+    ],
   },
+  // 404
   {
-    path: 'login',
-    element: <Login />,
+    path: '*',
+    element: <NotFound />,
   },
-  {
-    path: 'register',
-    element: <Register />,
-  },
-  {
-    path: 'video-room',
-    element: <VideoRoom />,
-  },
-  {
-    path: 'audio-room',
-    element: <AudioRoom />,
-  },
-  {
-    path: 'text-room',
-    element: <TextRoom />,
-  },
-])
+]
+
+export const router = createBrowserRouter(routes)

@@ -1,9 +1,16 @@
-import { RouterProvider } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import './App.css'
-import { router } from './routes'
+import { MeetingProvider } from './contexts/meeting-context'
+import { UserProvider } from './contexts/user-context'
 
 const App = () => {
-  return <RouterProvider router={router} />
+  return (
+    <UserProvider>
+      <MeetingProvider>
+        <Outlet />
+      </MeetingProvider>
+    </UserProvider>
+  )
 }
 
 export default App
