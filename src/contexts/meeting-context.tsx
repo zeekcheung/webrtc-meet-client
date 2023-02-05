@@ -5,7 +5,6 @@ export const {
   context: MeetingContext,
   Provider: MeetingProvider,
   useValue: useMeeting,
-  setValue: setMeeting,
 } = createContext<Meeting | null>({
   defaultValue: null,
   displayName: 'MeetingContext',
@@ -16,5 +15,4 @@ export const {
     beginTime: '',
     endTime: '',
   },
-  errorMessage: "You haven't join a meeting!",
 })

@@ -4,31 +4,43 @@ export const createContext = function <V>({
   defaultValue,
   displayName,
   initialValue,
-  errorMessage,
 }: {
   defaultValue: V
   displayName?: string
   initialValue: V
-  errorMessage: string
 }) {
-  const context = reactCreateContext<V>(defaultValue)
+  const context = reactCreateContext<{
+    // 读取context值
+    value: V
+    // 更新context值（闭包，注意需要作为方法调用）
+    setValue: (newValue: V) => void
+  }>({
+    value: defaultValue,
+    setValue(newValue) {
+      this.value = newValue
+    },
+  })
   context.displayName = displayName
 
   const Provider = ({ children }: { children: ReactNode }) => {
-    return <context.Provider value={initialValue}>{children}</context.Provider>
+    return (
+      <context.Provider
+        value={{
+          value: initialValue,
+          setValue(newValue) {
+            this.value = newValue
+          },
+        }}
+      >
+        {children}
+      </context.Provider>
+    )
   }
 
-  // 读取context值
   const useValue = () => {
     const value = useContext(context)
-    if (value === null) {
-      throw new Error(errorMessage)
-    }
     return value
   }
 
-  // 更新context值（闭包）
-  const setValue = (newValue: V) => (initialValue = newValue)
-
-  return { context, Provider, useValue, setValue }
+  return { context, Provider, useValue }
 }

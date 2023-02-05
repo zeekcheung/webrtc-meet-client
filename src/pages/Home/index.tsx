@@ -15,10 +15,9 @@ import { v4 as uuidv4 } from 'uuid'
 import { BaseContent, BaseFooter, BaseHeader, PageContainer } from '../../components/layout'
 import { Clock, Logo, StyledAvatar, StyledLink } from '../../components/lib'
 import { StyledDivider, StyledParagraph, StyledTitle } from '../../components/typography'
-import { setMeeting } from '../../contexts/meeting-context'
+import { useMeeting } from '../../contexts/meeting-context'
 import { useUser } from '../../contexts/user-context'
 import { NewMeetFormValue } from '../../types/form'
-import { User } from '../../types/user'
 import { HOME_PATH, PROFILE_PATH, ROOM_PATH, SIGN_IN_PATH, SIGN_UP_PATH } from '../../utils/constant'
 
 export const Home = () => {
@@ -79,7 +78,7 @@ const PopoverList = () => {
   const [open, setOpen] = useState(false)
 
   // TODO 获取用户信息
-  const user: User = useUser()
+  const { value: user } = useUser()
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
@@ -93,7 +92,7 @@ const PopoverList = () => {
       open={open}
       onOpenChange={handleOpenChange}
     >
-      <StyledAvatar username={user.nickname} />
+      <StyledAvatar username={user?.nickname} />
     </Popover>
   )
 }
@@ -140,6 +139,7 @@ const NewMeetingModal = () => {
   const [form] = Form.useForm()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const meeting = useMeeting()
 
   const showModal = () => {
     setOpen(true)
@@ -152,11 +152,11 @@ const NewMeetingModal = () => {
         form.resetFields()
         // TODO 创建会议
         // console.log(values)
-        const meeting = {
+        const newMeeting = {
           ...values,
           beginTime: new Date().toUTCString(),
         }
-        setMeeting(meeting)
+        meeting.setValue(newMeeting)
         navigate(ROOM_PATH)
       })
       .catch((info) => {
