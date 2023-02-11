@@ -46,7 +46,7 @@ export const validatePassword = (password: string): IValidateResult => {
       minUppercase: 2,
     })
   ) {
-    return ValidateResult('error', `The password is't strong enough!`)
+    return ValidateResult('error', `The password isn't strong enough!`)
   }
   return ValidateResult()
 }

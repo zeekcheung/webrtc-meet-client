@@ -10,7 +10,7 @@ export const {
   initialValue: {
     username: 'zeek',
     nickname: 'zeek',
-    signUpTime: Date.now().toLocaleString(),
+    register_time: Date.now().toLocaleString(),
   },
   displayName: 'UserContext',
 })

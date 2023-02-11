@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
 import logo from '../assets/webrtc-logo.png'
 import { getTimeFromDate, useCurrDate } from '../utils/date'
-import { getRandomIntInclusive } from '../utils/lib'
+import { getRandomIntInclusive } from '../utils/math'
 
 export const StyledButton = styled(Button)`
   margin-top: 1em;

@@ -16,7 +16,8 @@ import { BaseContent, BaseFooter, BaseHeader, PageContainer } from '../../compon
 import { Clock, Logo, StyledAvatar, StyledLink } from '../../components/lib'
 import { StyledDivider, StyledParagraph, StyledTitle } from '../../components/typography'
 import { useMeeting } from '../../contexts/meeting-context'
-import { useUser } from '../../contexts/user-context'
+import { useAppDispatch, useAppSelector } from '../../hooks'
+import { logoutThunk, userSelector } from '../../store/slice/user-slice'
 import { NewMeetFormValue } from '../../types/form'
 import { HOME_PATH, PROFILE_PATH, ROOM_PATH, SIGN_IN_PATH, SIGN_UP_PATH } from '../../utils/constant'
 
@@ -76,9 +77,7 @@ const Footer = () => {
 
 const PopoverList = () => {
   const [open, setOpen] = useState(false)
-
-  // TODO 获取用户信息
-  const { value: user } = useUser()
+  const user = useAppSelector(userSelector)
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
@@ -98,8 +97,11 @@ const PopoverList = () => {
 }
 
 const PopoverContent = ({ isAuthorized }: { isAuthorized: boolean }) => {
-  // TODO 退出登录
-  const signOut = () => console.log('logout')
+  const dispatch = useAppDispatch()
+
+  const signOut = () => {
+    void dispatch(logoutThunk())
+  }
 
   return (
     <Space direction='vertical' style={{ fontWeight: '500 !important' }}>
@@ -192,7 +194,7 @@ const NewMeetingModal = () => {
           </Form.Item>
 
           <Form.Item name='password' label='Password' initialValue={''}>
-            <Input.Password autoComplete='current-password' />
+            <Input.Password autoComplete='off' />
           </Form.Item>
 
           <Form.Item

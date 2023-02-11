@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { Form } from 'antd'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { PageContainer } from '../../components/layout'
 import {
   createSignForm,
@@ -12,6 +13,9 @@ import {
   TitleFormItem,
   UsernameFormItem,
 } from '../../components/sign'
+import { useAppDispatch } from '../../hooks'
+import { thunkIsFulfilled } from '../../store'
+import { loginThunk } from '../../store/slice/user-slice'
 import { SignInFormValue } from '../../types/form'
 import { HOME_PATH, SIGN_UP_PATH } from '../../utils/constant'
 
@@ -19,10 +23,15 @@ const SignForm = createSignForm<SignInFormValue>()
 
 export const SignIn = () => {
   const [form] = Form.useForm<SignInFormValue>()
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
 
-  const handleFinish = (values: SignInFormValue) => {
-    // TODO 登录
-    console.log('Received values of form: ', values)
+  const handleFinish = async (values: SignInFormValue) => {
+    const res = await dispatch(loginThunk(values))
+    // 登录成功则跳转到主页
+    if (thunkIsFulfilled(res)) {
+      navigate(HOME_PATH)
+    }
   }
 
   return (
@@ -32,6 +41,7 @@ export const SignIn = () => {
           {...formItemLayout}
           form={form}
           name='sign-in'
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onFinish={handleFinish}
           style={{ minWidth: 500, maxWidth: 600 }}
           scrollToFirstError

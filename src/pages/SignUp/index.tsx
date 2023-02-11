@@ -14,6 +14,8 @@ import {
   TitleFormItem,
   UsernameFormItem,
 } from '../../components/sign'
+import { useAppDispatch } from '../../hooks'
+import { registerThunk } from '../../store/slice/user-slice'
 import { SignUpFormValue } from '../../types/form'
 import { HOME_PATH, SIGN_IN_PATH } from '../../utils/constant'
 
@@ -21,10 +23,10 @@ const SignForm = createSignForm<SignUpFormValue>()
 
 export const SignUp = () => {
   const [form] = Form.useForm<SignUpFormValue>()
+  const dispatch = useAppDispatch()
 
   const handleFinish = (values: SignUpFormValue) => {
-    // TODO 注册
-    console.log('Received values of form: ', values)
+    void dispatch(registerThunk(values))
   }
 
   return (
@@ -34,6 +36,7 @@ export const SignUp = () => {
           {...formItemLayout}
           form={form}
           name='sign-up'
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onFinish={handleFinish}
           style={{ minWidth: 500, maxWidth: 600 }}
           scrollToFirstError

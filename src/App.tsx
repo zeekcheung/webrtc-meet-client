@@ -1,16 +1,36 @@
+import { App as AntdApp } from 'antd'
+import { MessageInstance } from 'antd/es/message/interface'
+import { ModalStaticFunctions } from 'antd/es/modal/confirm'
+import { NotificationInstance } from 'antd/es/notification/interface'
 import { Outlet } from 'react-router-dom'
 import './App.css'
-import { MeetingProvider } from './contexts/meeting-context'
-import { UserProvider } from './contexts/user-context'
+import { useAppDispatch, useMount } from './hooks'
+import { getProfileThunk } from './store/slice/user-slice'
+
+let message: MessageInstance
+let notification: NotificationInstance
+let modal: Omit<ModalStaticFunctions, 'warn'>
 
 const App = () => {
+  // 配置全局通知组件
+  const staticFunction = AntdApp.useApp()
+  message = staticFunction.message
+  modal = staticFunction.modal
+  notification = staticFunction.notification
+
+  const dispatch = useAppDispatch()
+  // 初始化用户信息
+  useMount(() => {
+    void dispatch(getProfileThunk())
+  })
+
   return (
-    <UserProvider>
-      <MeetingProvider>
-        <Outlet />
-      </MeetingProvider>
-    </UserProvider>
+    <AntdApp>
+      <Outlet />
+    </AntdApp>
   )
 }
 
 export default App
+
+export { message, notification, modal }
