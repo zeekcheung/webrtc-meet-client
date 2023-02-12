@@ -5,7 +5,7 @@ import { Form, Input, Space } from 'antd'
 import Paragraph from 'antd/es/typography/Paragraph'
 import { ReactNode } from 'react'
 import { SignInFormValue, SignUpFormValue } from '../types/form'
-import { validateNickname, validatePassword, validateUsername } from '../utils/validators/user'
+import { validateNickname, validatePassword, validateUsername } from '../validators/user'
 import { StyledButton } from './lib'
 import { StyledTitle } from './typography'
 

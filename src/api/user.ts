@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { request } from '.'
-import { LoginDto, RegisterDto, User } from '../../types/user'
-import { USER_BASE_URL } from '../constant'
+import { LoginDto, RegisterDto, User } from '../types/user'
+import { USER_BASE_URL } from '../utils/constant'
 
 const userClient = axios.create({
   baseURL: USER_BASE_URL,
