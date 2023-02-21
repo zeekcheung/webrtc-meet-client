@@ -1,6 +1,5 @@
 import { checkSocketConnection, signalServer, SignalServer } from '.'
 import { Meeting } from '../../types/meeting'
-import { User } from '../../types/user'
 
 /**
  * 客户端到信令服务器的事件触发器
@@ -61,7 +60,7 @@ export class SignalEmitter {
    */
   @checkSocketConnection
   async joinRoom(roomName: string, password: string) {
-    return await new Promise<Meeting>((resolve, reject) => {
+    return await new Promise<{ username: string; userList: string[]; updatedMeeting: Meeting }>((resolve, reject) => {
       this.socket?.emit('join-room', { roomName, password }, (res) => {
         const parsedRes = JSON.parse(res)
         parsedRes.error !== undefined ? reject(parsedRes.message) : resolve(parsedRes)
@@ -75,7 +74,7 @@ export class SignalEmitter {
    */
   @checkSocketConnection
   async leaveRoom(roomName: string) {
-    return await new Promise<{ username: string; room: User[] }>((resolve, reject) => {
+    return await new Promise<{ username: string; userList: string[] }>((resolve, reject) => {
       this.socket?.emit('leave-room', roomName, (res) => {
         resolve(JSON.parse(res))
         // 断开与信令服务器的连接

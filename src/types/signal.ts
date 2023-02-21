@@ -1,6 +1,5 @@
 import { ManagerOptions, Socket, SocketOptions } from 'socket.io-client'
 import { Meeting } from './meeting'
-import { User } from './user'
 
 /**
  * 服务端发送给客户端的所有事件
@@ -75,9 +74,9 @@ export interface ISignalServer {
   disconnect: () => void
 }
 
-export type HandleOtherJoinCallback = (res: { username: string; room: User[]; updatedMeeting: Meeting }) => void
+export type HandleOtherJoinCallback = (res: { username: string; userList: string[]; updatedMeeting: Meeting }) => void
 
-export type HandleOtherLeaveCallback = (res: { username: string; room: User[] }) => void
+export type HandleOtherLeaveCallback = (res: { username: string; userList: string[] }) => void
 
 export type HandleRoomClosedCallback = (res: Meeting) => void
 

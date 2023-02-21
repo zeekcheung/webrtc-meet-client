@@ -252,16 +252,18 @@ const JoinMeetingModal = () => {
         form.resetFields()
         closeModal()
 
+        const username = user?.username as string
         const meetingId = meetingIdRef.current
 
         // 初始化信令服务器
-        await initSignalServer(user?.username ?? '')
+        await initSignalServer(username)
         // 通过会议 id 加入房间
         try {
-          const meeting = await signalEmitter.joinRoom(meetingId, password)
-          console.log(meeting)
+          const { username, userList, updatedMeeting } = await signalEmitter.joinRoom(meetingId, password)
+          console.log(`${username} has joined room.`)
+          console.log(`userList: ${userList}`)
           // 将会议数据保存到 store 中
-          dispatch(setMeeting(meeting))
+          dispatch(setMeeting(updatedMeeting))
           // 进入会议室页
           navigate(ROOM_PATH)
         } catch (e: any) {

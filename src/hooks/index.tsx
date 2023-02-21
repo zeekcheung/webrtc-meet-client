@@ -74,15 +74,15 @@ export const useInitSignalServer = () => {
 
   const intiSignalServer = async (username: string) => {
     return await signalServer.init(username, {
-      handleOtherJoinCallback: ({ username, updatedMeeting, room }) => {
+      handleOtherJoinCallback: ({ username, updatedMeeting, userList }) => {
         // 有其他用户加入房间时，更新 store 中的 meeting
         dispatch(setMeeting(updatedMeeting))
         console.log(`${username} join room.`)
-        console.log(room)
+        console.log(userList)
       },
-      handleOtherLeaveCallback: ({ username, room }) => {
+      handleOtherLeaveCallback: ({ username, userList }) => {
         console.log(`${username} leave room.`)
-        console.log(room)
+        console.log(userList)
       },
       handleRoomClosedCallback: (meeting) => {
         console.log(`The meeting has ended.`)

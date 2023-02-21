@@ -75,10 +75,6 @@ export class SignalServer {
    * @returns socket.id
    */
   async init(username: string, handlersCallback?: RegisterHandlersProps) {
-    // 如果已经连接上了信令服务器，则不需要再重复连接
-    if (this.socket?.connected === true) {
-      return this.socket?.id
-    }
     // 连接信令服务器
     const socketId = await this.connect()
     // 绑定username
