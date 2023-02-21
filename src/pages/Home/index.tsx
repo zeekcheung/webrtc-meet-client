@@ -6,18 +6,19 @@ import {
   PlusCircleOutlined,
   PlusSquareOutlined,
 } from '@ant-design/icons'
-import styled from '@emotion/styled'
-import { Button, Form, Input, InputNumber, Modal, Popover, Space, Typography } from 'antd'
+import { Button, Form, Input, InputNumber, message, Modal, Popover, Space, Typography } from 'antd'
 import Search from 'antd/es/input/Search'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
+import { signalEmitter } from '../../api/signal'
 import { BaseContent, BaseFooter, BaseHeader, PageContainer } from '../../components/layout'
 import { Clock, Logo, StyledAvatar, StyledLink } from '../../components/lib'
 import { StyledDivider, StyledParagraph, StyledTitle } from '../../components/typography'
-import { useMeeting } from '../../contexts/meeting-context'
-import { useAppDispatch, useAppSelector } from '../../hooks'
-import { logoutThunk, userSelector } from '../../store/slice/user-slice'
+import { useAppDispatch, useInitSignalServer, useUser } from '../../hooks'
+import { thunkIsFulfilled } from '../../store'
+import { createMeetingThunk, setMeeting } from '../../store/slice/meeting-slice'
+import { logoutThunk } from '../../store/slice/user-slice'
 import { NewMeetFormValue } from '../../types/form'
 import { HOME_PATH, PROFILE_PATH, ROOM_PATH, SIGN_IN_PATH, SIGN_UP_PATH } from '../../utils/constant'
 
@@ -49,11 +50,6 @@ const Header = () => {
 }
 
 const Content = () => {
-  const handleSearch = (value: string) => {
-    // TODO 通过链接加入房间
-    console.log(value)
-  }
-
   return (
     <BaseContent>
       <Typography style={{ paddingTop: '2em', paddingBottom: '1em' }}>
@@ -65,7 +61,7 @@ const Content = () => {
       </Typography>
       <Space>
         <NewMeetingModal />
-        <Search placeholder='Enter a link' prefix={<LinkOutlined />} allowClear onSearch={handleSearch} />
+        <JoinMeetingModal />
       </Space>
     </BaseContent>
   )
@@ -77,7 +73,7 @@ const Footer = () => {
 
 const PopoverList = () => {
   const [open, setOpen] = useState(false)
-  const user = useAppSelector(userSelector)
+  const user = useUser()
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
@@ -141,25 +137,33 @@ const NewMeetingModal = () => {
   const [form] = Form.useForm()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
-  const meeting = useMeeting()
+  const dispatch = useAppDispatch()
+  const user = useUser()
 
   const showModal = () => {
+    if (user == null) {
+      void message.warning(`You haven't signed in yet!`)
+      return
+    }
     setOpen(true)
   }
 
   const handleOk = () => {
     form
       .validateFields()
-      .then((values: NewMeetFormValue) => {
+      .then(async (values: NewMeetFormValue) => {
         form.resetFields()
-        // TODO 创建会议
-        // console.log(values)
-        const newMeeting = {
-          ...values,
-          beginTime: new Date().toUTCString(),
+        // 在数据库中创建会议
+        const action = await dispatch(
+          createMeetingThunk({
+            ...values,
+            host_username: user?.username as string,
+          }),
+        )
+        // 会议创建成功之后，跳转到会议室页面
+        if (thunkIsFulfilled(action)) {
+          navigate(ROOM_PATH)
         }
-        meeting.setValue(newMeeting)
-        navigate(ROOM_PATH)
       })
       .catch((info) => {
         console.log('Validate Failed:', info)
@@ -183,17 +187,17 @@ const NewMeetingModal = () => {
         onOk={handleOk}
         onCancel={handleCancel}
       >
-        <StyledForm form={form} name='new-meet'>
+        <Form form={form} name='new-meet'>
           <Form.Item
             name='name'
             label='Name'
-            initialValue={uuidv4()}
+            initialValue={uuidv4().split('-').slice(0, 2).join('-')}
             rules={[{ required: true, message: 'Please input the name of meeting!' }]}
           >
             <Input />
           </Form.Item>
 
-          <Form.Item name='password' label='Password' initialValue={''}>
+          <Form.Item name='password' label='Password' initialValue={''} tooltip='Password is optional.'>
             <Input.Password autoComplete='off' />
           </Form.Item>
 
@@ -205,14 +209,87 @@ const NewMeetingModal = () => {
           >
             <InputNumber min={1} max={10} />
           </Form.Item>
-        </StyledForm>
+        </Form>
       </Modal>
     </>
   )
 }
 
-const StyledForm = styled(Form)`
-  & .ant-form-item .ant-form-item-label {
-    width: 5em;
+const JoinMeetingModal = () => {
+  const [form] = Form.useForm()
+  const [open, setOpen] = useState(false)
+  const user = useUser()
+  const meetingIdRef = useRef('')
+  const navigate = useNavigate()
+  const dispatch = useAppDispatch()
+  const initSignalServer = useInitSignalServer()
+
+  const showModal = () => {
+    setOpen(true)
   }
-`
+
+  const closeModal = () => {
+    setOpen(false)
+  }
+
+  const handleSearch = (meetingId: string) => {
+    if (user == null) {
+      void message.warning(`You haven't signed in yet!`)
+      return
+    }
+    if (meetingId.length === 0) {
+      void message.warning(`Please enter the meeting number.`)
+      return
+    }
+    meetingIdRef.current = meetingId
+    showModal()
+  }
+
+  const handleOk = () => {
+    form
+      .validateFields()
+      .then(async ({ password }: { password: string }) => {
+        form.resetFields()
+        closeModal()
+
+        const meetingId = meetingIdRef.current
+
+        // 初始化信令服务器
+        await initSignalServer(user?.username ?? '')
+        // 通过会议 id 加入房间
+        try {
+          const meeting = await signalEmitter.joinRoom(meetingId, password)
+          console.log(meeting)
+          // 将会议数据保存到 store 中
+          dispatch(setMeeting(meeting))
+          // 进入会议室页
+          navigate(ROOM_PATH)
+        } catch (e: any) {
+          void message.error(e)
+        }
+      })
+      .catch((info) => {
+        console.log('Validate Failed:', info)
+      })
+  }
+
+  return (
+    <>
+      <Search placeholder='Enter a meeting number' prefix={<LinkOutlined />} onSearch={handleSearch} required />
+      <Modal
+        title='Enter the password of meeting'
+        okText='Join'
+        cancelText='Cancel'
+        open={open}
+        onOk={handleOk}
+        onCancel={closeModal}
+      >
+        <Form form={form} name='join-meet'>
+          <Form.Item name='password' label='Password' initialValue={''} tooltip='Password is optional.'>
+            <Input.Password autoComplete='off' />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
+  )
+}

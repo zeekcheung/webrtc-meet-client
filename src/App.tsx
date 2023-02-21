@@ -12,12 +12,6 @@ let notification: NotificationInstance
 let modal: Omit<ModalStaticFunctions, 'warn'>
 
 const App = () => {
-  // 配置全局通知组件
-  const staticFunction = AntdApp.useApp()
-  message = staticFunction.message
-  modal = staticFunction.modal
-  notification = staticFunction.notification
-
   const dispatch = useAppDispatch()
   // 初始化用户信息
   useMount(() => {

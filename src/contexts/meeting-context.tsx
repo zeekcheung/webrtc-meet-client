@@ -1,5 +1,5 @@
 import { createContext } from '.'
-import { Meeting } from '../types/form'
+import { Meeting } from '../types/meeting'
 
 export const {
   context: MeetingContext,
@@ -8,11 +8,5 @@ export const {
 } = createContext<Meeting | null>({
   defaultValue: null,
   displayName: 'MeetingContext',
-  initialValue: {
-    name: 'meeting a',
-    size: 1,
-    password: '',
-    beginTime: '',
-    endTime: '',
-  },
+  initialValue: null,
 })

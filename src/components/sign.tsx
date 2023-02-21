@@ -162,7 +162,7 @@ export const PasswordFormItem = () => {
       ]}
       hasFeedback
     >
-      <Input.Password />
+      <Input.Password autoComplete='current-password' />
     </Form.Item>
   )
 }

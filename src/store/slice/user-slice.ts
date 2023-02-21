@@ -1,8 +1,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { message } from 'antd'
+import { getProfile, login, logout, register } from '../../api/user'
 import { RootState, SetUserAction, UserState } from '../../types/store'
 import { LoginDto, RegisterDto } from '../../types/user'
-import { getProfile, login, logout, register } from '../../utils/api/user'
 
 const initialState: UserState = {
   value: null,
@@ -23,14 +23,16 @@ export const userSlice = createSlice({
 export const registerThunk = createAsyncThunk('user/register', async (payload: RegisterDto, { rejectWithValue }) => {
   try {
     // 发送注册请求
-    await register(payload)
+    const user = await register(payload)
 
     // 打开成功通知窗口
     message.config({ duration: 3 })
     await message.success('Sign up successfully!')
+
+    return user
   } catch (e: any) {
     await message.error(`${JSON.stringify(e.message)}`)
-    rejectWithValue(e)
+    return rejectWithValue(e)
   }
 })
 
@@ -44,10 +46,12 @@ export const loginThunk = createAsyncThunk('user/login', async (payload: LoginDt
 
     // 全局设置 user
     dispatch(setUser(user))
+
+    return user
   } catch (e: any) {
     // 捕获请求异常
     await message.error(`${JSON.stringify(e.message)}`)
-    rejectWithValue(e)
+    return rejectWithValue(e)
   }
 })
 
@@ -62,7 +66,7 @@ export const logoutThunk = createAsyncThunk('user/logout', async (_, { dispatch,
     dispatch(setUser(null))
   } catch (e: any) {
     await message.error(`${JSON.stringify(e.message)}`)
-    rejectWithValue(e)
+    return rejectWithValue(e)
   }
 })
 

@@ -27,6 +27,7 @@ export const SignUp = () => {
 
   const handleFinish = (values: SignUpFormValue) => {
     void dispatch(registerThunk(values))
+    form.resetFields()
   }
 
   return (

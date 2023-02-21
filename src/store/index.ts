@@ -1,16 +1,14 @@
-import { configureStore, PayloadAction } from '@reduxjs/toolkit'
+import { configureStore, isFulfilled } from '@reduxjs/toolkit'
+import { meetingReducer } from './slice/meeting-slice'
 import { userReducer } from './slice/user-slice'
 
 const store = configureStore({
   reducer: {
     user: userReducer,
+    meeting: meetingReducer,
   },
 })
 
 export default store
 
-export const thunkIsFulfilled = (
-  action: PayloadAction<any> & {
-    meta: { requestStatus: 'fulfilled' | 'rejected' }
-  },
-) => action.meta.requestStatus === 'fulfilled'
+export const thunkIsFulfilled = isFulfilled()

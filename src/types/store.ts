@@ -1,5 +1,6 @@
 import { PayloadAction } from '@reduxjs/toolkit'
 import store from '../store'
+import { Meeting } from './meeting'
 import { User } from './user'
 
 /* =============== root slice =============== */
@@ -15,3 +16,11 @@ export interface UserState {
 }
 
 export type SetUserAction = PayloadAction<UserState['value']>
+
+/* =============== meeting slice =============== */
+
+export interface MeetingState {
+  value: Meeting | null
+}
+
+export type SetMeetingAction = PayloadAction<MeetingState['value']>

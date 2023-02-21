@@ -27,9 +27,9 @@ export const SignIn = () => {
   const navigate = useNavigate()
 
   const handleFinish = async (values: SignInFormValue) => {
-    const res = await dispatch(loginThunk(values))
+    const action = await dispatch(loginThunk(values))
     // 登录成功则跳转到主页
-    if (thunkIsFulfilled(res)) {
+    if (thunkIsFulfilled(action)) {
       navigate(HOME_PATH)
     }
   }
