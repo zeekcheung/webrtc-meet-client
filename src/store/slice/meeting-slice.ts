@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { message } from 'antd'
-import { createMeeting } from '../../api/meeting'
+import { createMeeting } from '../../api/http/meeting'
 import { CreateMeetingDto } from '../../types/meeting'
 import { MeetingState, RootState, SetMeetingAction } from '../../types/store'
 

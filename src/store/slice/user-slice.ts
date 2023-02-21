@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { message } from 'antd'
-import { getProfile, login, logout, register } from '../../api/user'
+import { getProfile, login, logout, register } from '../../api/http/user'
 import { RootState, SetUserAction, UserState } from '../../types/store'
 import { LoginDto, RegisterDto } from '../../types/user'
 
