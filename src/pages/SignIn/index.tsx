@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { PageContainer } from '../../components/layout'
 import {
   createSignForm,
-  formItemLayout,
   PasswordFormItem,
   RedirectFormItem,
   SignParagraph,
@@ -38,12 +37,12 @@ export const SignIn = () => {
     <PageContainer>
       <SignSpace>
         <SignForm
-          {...formItemLayout}
           form={form}
           name='sign-in'
+          layout='vertical'
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onFinish={handleFinish}
-          style={{ minWidth: 500, maxWidth: 600 }}
+          style={{ minWidth: '33rem', maxWidth: '100%' }}
           scrollToFirstError
         >
           <TitleFormItem title='Sign in' />

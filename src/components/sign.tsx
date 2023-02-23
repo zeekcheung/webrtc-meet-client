@@ -43,8 +43,6 @@ export const SignParagraph = styled(Paragraph)`
  */
 export const createSignForm = function <FormValue extends SignUpFormValue | SignInFormValue>() {
   return styled(Form<FormValue>)`
-    transform: translateX(-16.7%);
-
     & span,
     & label {
       color: #fff !important;
@@ -57,33 +55,9 @@ export const createSignForm = function <FormValue extends SignUpFormValue | Sign
   `
 }
 
-export const formItemLayout = {
-  labelCol: {
-    xs: { span: 24 },
-    sm: { span: 8 },
-  },
-  wrapperCol: {
-    xs: { span: 24 },
-    sm: { span: 16 },
-  },
-}
-
-export const tailFormItemLayout = {
-  wrapperCol: {
-    xs: {
-      span: 24,
-      offset: 0,
-    },
-    sm: {
-      span: 16,
-      offset: 8,
-    },
-  },
-}
-
 export const TitleFormItem = ({ title }: { title: string }) => {
   return (
-    <Form.Item {...tailFormItemLayout}>
+    <Form.Item>
       <StyledTitle>{title}</StyledTitle>
     </Form.Item>
   )
@@ -196,7 +170,7 @@ export const ConfirmFormItem = () => {
 
 export const SubmitFormItem = ({ content }: { content: string }) => {
   return (
-    <Form.Item {...tailFormItemLayout}>
+    <Form.Item>
       <SignButton type='link' htmlType='submit'>
         {content}
       </SignButton>
@@ -206,7 +180,7 @@ export const SubmitFormItem = ({ content }: { content: string }) => {
 
 export const RedirectFormItem = ({ children }: { children: ReactNode }) => {
   return (
-    <Form.Item {...tailFormItemLayout}>
+    <Form.Item>
       <Space direction='vertical'>{children}</Space>
     </Form.Item>
   )

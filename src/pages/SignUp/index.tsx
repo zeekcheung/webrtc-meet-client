@@ -4,7 +4,6 @@ import { PageContainer } from '../../components/layout'
 import {
   ConfirmFormItem,
   createSignForm,
-  formItemLayout,
   NicknameFormItem,
   PasswordFormItem,
   RedirectFormItem,
@@ -34,12 +33,11 @@ export const SignUp = () => {
     <PageContainer>
       <SignSpace>
         <SignForm
-          {...formItemLayout}
           form={form}
           name='sign-up'
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onFinish={handleFinish}
-          style={{ minWidth: 500, maxWidth: 600 }}
+          style={{ minWidth: '33rem', maxWidth: '100%' }}
           scrollToFirstError
         >
           <TitleFormItem title='Sign up' />

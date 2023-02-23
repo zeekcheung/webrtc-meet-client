@@ -20,6 +20,6 @@ export const request = async <RequestData, ResponseData>(
     return response.data
   } catch (e: any) {
     // 捕获请求异常，抛出异常的响应 data
-    throw e.response.data
+    throw e?.response?.data
   }
 }

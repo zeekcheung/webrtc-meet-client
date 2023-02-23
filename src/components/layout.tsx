@@ -2,7 +2,7 @@ import styled from '@emotion/styled'
 import { Layout } from 'antd'
 
 export const PageContainer = styled(Layout)`
-  width: 131.25vh;
+  max-width: 131.25vh;
   height: 87.5vh;
   margin: 6.25vh auto;
   background-color: #191f24;
