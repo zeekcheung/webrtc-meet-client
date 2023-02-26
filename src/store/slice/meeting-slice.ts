@@ -13,7 +13,8 @@ export const meetingSlice = createSlice({
   initialState,
   reducers: {
     setMeeting(state, action: SetMeetingAction) {
-      state.value = action.payload
+      const meeting = { ...state.value, ...action.payload }
+      state.value = meeting
     },
   },
 })

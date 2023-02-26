@@ -1,18 +1,21 @@
 import { useEffect } from 'react'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { signalServer } from '../api/signal'
+import { pcMaps, PeerConnection } from '../api/p2p'
+import { signalListener } from '../api/signal'
 import { meetingSelector, setMeeting } from '../store/slice/meeting-slice'
 import { userSelector } from '../store/slice/user-slice'
+import { ResetSignalHandlersProps } from '../types/signal'
 import { AppDispatch, RootState } from '../types/store'
 import { HOME_PATH, RoutePath } from '../utils/constant'
 
 export const useAppDispatch = () => useDispatch<AppDispatch>()
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
-export const useMount = (callback: () => any) => {
+export const useMount = (onMount: () => any, onUnmount?: () => void) => {
   useEffect(() => {
-    callback()
+    onMount()
+    return onUnmount
   }, [])
 }
 
@@ -68,17 +71,44 @@ export const useIsMeetingHost = () => {
   return user?.username === meeting?.host?.username
 }
 
-export const useInitSignalServer = () => {
+/**
+ * 加入房间后，重置信令服务器的事件处理函数
+ * @returns 重置信令服务器事件处理函数的函数
+ */
+export const useResetSignalHandlers = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
 
-  const intiSignalServer = async (username: string) => {
-    return await signalServer.init(username, {
+  /**
+   * 加入房间后，重置信令服务器的事件处理函数，以处理 p2p 连接
+   * @param peerConnectionConfig 与对端的 p2p 连接的配置
+   * @param offerSdpOptions 发送给对端的 OfferSdp 的配置
+   * @param handleRemoteStream 处理对端媒体流的回调函数
+   * @returns
+   */
+  const resetSignalHandlers = async ({
+    peerConnectionConfig,
+    offerSdpOptions,
+    handleRemoteStream,
+  }: ResetSignalHandlersProps) => {
+    return signalListener.registerAllHandlers({
+      /**
+       * 处理其他用户加入房间
+       */
       handleOtherJoinCallback: ({ username, updatedMeeting, userList }) => {
-        // 有其他用户加入房间时，更新 store 中的 meeting
-        dispatch(setMeeting(updatedMeeting))
-        console.log(`${username} join room.`)
+        const sid = userList.find((user) => user.username === username)?.sid
+        console.log(`${username}:${sid} join room.`)
         console.log(userList)
+        // 更新 store 中的 meeting
+        dispatch(setMeeting(updatedMeeting))
+        // 建立一个新的 p2p 连接，与该用户所在的对端对应
+        if (sid === undefined) {
+          throw new Error(`${username}'s sid is undefined.`)
+        }
+        const pc = new PeerConnection(sid, peerConnectionConfig, handleRemoteStream)
+        pcMaps.set(username, pc)
+        // 与对端进行媒体协商
+        void pc.startNegotiate(offerSdpOptions)
       },
       handleOtherLeaveCallback: ({ username, userList }) => {
         console.log(`${username} leave room.`)
@@ -90,12 +120,29 @@ export const useInitSignalServer = () => {
         // 回到主页
         navigate(HOME_PATH)
       },
-      handleReceiveMessageCallback: ({ username, message }) => {
-        console.log(`receive message from : ${username}`)
-        console.log(message)
+      /**
+       * 处理接收到对端的媒体协商数据
+       */
+      handleReceiveMessageCallback: async ({ username, message, sid }) => {
+        // console.log(`receive message from: ${username}`)
+        // console.log(message)
+
+        let pc = pcMaps.get(username)
+
+        /**
+         * 如果没找到对端的 p2p 连接，说明本机是加入方
+         * 在接收到媒体协商数据时，创建对应的 p2p 连接
+         */
+        if (pc === undefined) {
+          pc = new PeerConnection(sid, peerConnectionConfig, handleRemoteStream)
+          pcMaps.set(username, pc)
+        }
+
+        // 媒体协商
+        void pc.handleNegotiateMessage(message)
       },
     })
   }
 
-  return intiSignalServer
+  return resetSignalHandlers
 }

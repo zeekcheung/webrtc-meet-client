@@ -74,8 +74,11 @@ export const getProfileThunk = createAsyncThunk('user/getProfile', async (_, { d
   try {
     // 请求用户信息
     const user = await getProfile()
-    // 全局设置用户信息
-    dispatch(setUser(user))
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+    if (user) {
+      // 全局设置用户信息
+      dispatch(setUser(user))
+    }
   } catch (e) {
     console.log(`User has not logged in yet!`)
     rejectWithValue(e)

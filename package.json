@@ -79,7 +79,8 @@
     "stylelint-config-standard": "^29.0.0",
     "stylelint-config-standard-scss": "^6.1.0",
     "stylelint-declaration-block-no-ignored-properties": "^2.6.0",
-    "stylelint-order": "^5.0.0"
+    "stylelint-order": "^5.0.0",
+    "vconsole": "^3.15.0"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"

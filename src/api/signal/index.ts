@@ -70,15 +70,23 @@ export class SignalServer {
   }
 
   /**
-   * 初始化信令服务器
+   * 1. 连接信令服务器
+   *
+   * 2. 绑定 username 到对应的 `Socket` 实例
+   *
+   * 3. 监听信令服务器的事件
    * @param username 用户名
    * @returns socket.id
    */
   async init(username: string, handlersCallback?: RegisterHandlersProps) {
-    // 连接信令服务器
-    const socketId = await this.connect()
-    // 绑定username
-    await signalEmitter.bindUsername(username)
+    let socketId = this.socket?.id
+    // 如果还未连接信令服务器，则进行连接
+    if (this.socket === null) {
+      // 连接信令服务器
+      socketId = await this.connect()
+      // 绑定username
+      await signalEmitter.bindUsername(username)
+    }
     // 注册相关的事件处理函数
     signalListener.registerAllHandlers(handlersCallback)
     return socketId

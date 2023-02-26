@@ -1,5 +1,6 @@
 import { ManagerOptions, Socket, SocketOptions } from 'socket.io-client'
 import { Meeting } from './meeting'
+import { HandleRemoteStream } from './p2p'
 
 /**
  * 服务端发送给客户端的所有事件
@@ -18,11 +19,15 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   ['bind-username']: (username: string, acknowledge: (res: string) => void) => void
   ['create-room']: (roomName: string, acknowledge: (res: string) => void) => void
-  ['join-room']: (body: { roomName: Meeting['id']; password: string }, acknowledge: (res: string) => void) => void
+  ['begin-join-room']: (body: { roomName: Meeting['id']; password: string }, acknowledge: (res: string) => void) => void
+  ['complete-join-room']: (roomName: Meeting['id'], acknowledge: (res: string) => void) => void
   ['leave-room']: (roomName: string, acknowledge: (res: string) => void) => void
   ['close-room']: (roomName: string, acknowledge: (res: string) => void) => void
-  ['send-message']: (body: { roomName: string; message: unknown }, acknowledge: (res: string) => void) => void
+  ['broadcast-message']: (body: { roomName: string; message: unknown }, acknowledge: (res: string) => void) => void
+  ['send-message']: (body: { sid: string; message: Message }, acknowledge: (res: string) => void) => void
 }
+
+export type Message = { type: RTCSdpType | 'candidate' } & Record<PropertyKey, any>
 
 /**
  * 与信令服务器连接的 `Socket` 实例
@@ -74,17 +79,36 @@ export interface ISignalServer {
   disconnect: () => void
 }
 
-export type HandleOtherJoinCallback = (res: { username: string; userList: string[]; updatedMeeting: Meeting }) => void
+export type HandleOtherJoinCallback = (res: {
+  username: string
+  userList: Array<{
+    username: string
+    sid: string
+  }>
+  updatedMeeting: Meeting
+}) => void
 
-export type HandleOtherLeaveCallback = (res: { username: string; userList: string[] }) => void
+export type HandleOtherLeaveCallback = (res: {
+  username: string
+  userList: Array<{
+    username: string
+    sid: string
+  }>
+}) => void
 
 export type HandleRoomClosedCallback = (res: Meeting) => void
 
-export type HandleReceiveMessageCallback = (res: { username: string; message: any }) => void
+export type HandleReceiveMessageCallback = (res: { username: string; message: Message; sid: string }) => any
 
 export interface RegisterHandlersProps {
   handleOtherJoinCallback?: HandleOtherJoinCallback
   handleOtherLeaveCallback?: HandleOtherLeaveCallback
   handleRoomClosedCallback?: HandleRoomClosedCallback
   handleReceiveMessageCallback?: HandleReceiveMessageCallback
+}
+
+export interface ResetSignalHandlersProps {
+  peerConnectionConfig?: RTCConfiguration
+  offerSdpOptions?: RTCOfferOptions
+  handleRemoteStream?: HandleRemoteStream
 }

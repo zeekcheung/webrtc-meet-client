@@ -7,7 +7,8 @@ import {
   RegisterHandlersProps,
 } from '../../types/signal'
 
-const defaultCallback = (...args: any) => console.log(...args)
+// const defaultCallback = (...args: any) => console.log(...args)
+const defaultCallback = (...args: any) => {}
 
 /**
  * 信令服务器到客户端的事件监听器
@@ -33,7 +34,6 @@ export class SignalListener {
     this.socket?.on('other-join', (res) => {
       // 执行回调函数
       callback(JSON.parse(res))
-      // TODO 重新进行媒体协商
     })
   }
 
@@ -44,7 +44,6 @@ export class SignalListener {
     // 其他用户离开房间
     this.socket?.on('other-leave', (res) => {
       callback(JSON.parse(res))
-      // TODO 重新创建 p2p 连接
     })
   }
 
@@ -55,7 +54,6 @@ export class SignalListener {
     // 房间已经被关闭
     this.socket?.on('room-closed', (res) => {
       callback(JSON.parse(res))
-      // TODO 重新创建 p2p 连接
     })
   }
 

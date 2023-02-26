@@ -1,21 +1,24 @@
 import { App as AntdApp } from 'antd'
-import { MessageInstance } from 'antd/es/message/interface'
-import { ModalStaticFunctions } from 'antd/es/modal/confirm'
-import { NotificationInstance } from 'antd/es/notification/interface'
 import { Outlet } from 'react-router-dom'
+import VConsole from 'vconsole'
 import './App.css'
 import { useAppDispatch, useMount } from './hooks'
 import { getProfileThunk } from './store/slice/user-slice'
+import { IS_DEV } from './utils/constant'
 
-let message: MessageInstance
-let notification: NotificationInstance
-let modal: Omit<ModalStaticFunctions, 'warn'>
+export let vConsole: VConsole
 
 const App = () => {
   const dispatch = useAppDispatch()
-  // 初始化用户信息
+
   useMount(() => {
+    // 初始化用户信息
     void dispatch(getProfileThunk())
+
+    // 开发环境下，配置移动端调试
+    if (IS_DEV) {
+      // vConsole = new VConsole()
+    }
   })
 
   return (
@@ -26,5 +29,3 @@ const App = () => {
 }
 
 export default App
-
-export { message, notification, modal }

@@ -1,4 +1,4 @@
-import { checkSocketConnection, signalServer, SignalServer } from '.'
+import { checkSocketConnection, SignalServer } from '.'
 import { Meeting } from '../../types/meeting'
 
 /**
@@ -53,23 +53,44 @@ export class SignalEmitter {
   }
 
   /**
-   * 加入房间名为 `roomName` 对应的房间
+   * 开始加入房间名为 `roomName` 对应的房间：
+   *
+   * 判断能否加入房间，如果可以的话，就先加入信令服务器的房间
    * @param roomName 房间名
    * @param password 会议密码
    * @returns
    */
   @checkSocketConnection
-  async joinRoom(roomName: string, password: string) {
+  async beginJoinRoom(roomName: string, password: string) {
+    return await new Promise<{ username: string; userList: Array<{ username: string; sid: string }> }>(
+      (resolve, reject) => {
+        this.socket?.emit('begin-join-room', { roomName, password }, (res) => {
+          const parsedRes = JSON.parse(res)
+          parsedRes.error !== undefined ? reject(parsedRes.message) : resolve(parsedRes)
+        })
+      },
+    )
+  }
+
+  /**
+   * 完成加入房间名为 `roomName` 对应的房间：
+   *
+   * 更新数据库中会议参与者的数据，并通知房间内其他用户有新用户加入房间
+   * @param roomName 房间名
+   * @returns
+   */
+  @checkSocketConnection
+  async completeJoinRoom(roomName: string) {
     return await new Promise<{ username: string; userList: string[]; updatedMeeting: Meeting }>((resolve, reject) => {
-      this.socket?.emit('join-room', { roomName, password }, (res) => {
+      this.socket?.emit('complete-join-room', roomName, (res) => {
         const parsedRes = JSON.parse(res)
-        parsedRes.error !== undefined ? reject(parsedRes.message) : resolve(parsedRes)
+        resolve(parsedRes)
       })
     })
   }
 
   /**
-   * // TODO 离开房间名为 `roomName` 对应的房间
+   * 离开房间名为 `roomName` 对应的房间
    * @param roomName 房间名
    */
   @checkSocketConnection
@@ -77,16 +98,12 @@ export class SignalEmitter {
     return await new Promise<{ username: string; userList: string[] }>((resolve, reject) => {
       this.socket?.emit('leave-room', roomName, (res) => {
         resolve(JSON.parse(res))
-        // 断开与信令服务器的连接
-        signalServer.disconnect()
-        // TODO 断开 p2p 连接
-        // closePeerConnection()
       })
     })
   }
 
   /**
-   * // TODO 关闭房间
+   * 关闭房间
    * @param roomName 房间名
    */
   @checkSocketConnection
@@ -94,23 +111,33 @@ export class SignalEmitter {
     return await new Promise<Meeting>((resolve, reject) => {
       this.socket?.emit('close-room', roomName, (res) => {
         resolve(JSON.parse(res))
-        // 断开与信令服务器的连接
-        signalServer.disconnect()
-        // TODO 断开 p2p 连接
-        // closePeerConnection()
       })
     })
   }
 
   /**
-   * 向 `roomName` 房间内的其他用户发送 `message` 消息（广播）
+   * 向 `roomName` 房间内的其他用户广播 `message` 消息
    * @param roomName 房间名
    * @param message 消息内容
    */
   @checkSocketConnection
-  async sendMessage<M>(roomName: string, message: M) {
+  async broadcastMessage(roomName: string, message: unknown) {
     return await new Promise<{ username: string; message: unknown }>((resolve, reject) => {
-      this.socket?.emit('send-message', { roomName, message }, (res) => {
+      this.socket?.emit('broadcast-message', { roomName, message }, (res) => {
+        resolve(JSON.parse(res))
+      })
+    })
+  }
+
+  /**
+   * 向 `socket.id` 为 `sid` 的用户发送 `message` 消息
+   * @param sid `socket.id`
+   * @param message 消息内容
+   */
+  @checkSocketConnection
+  async sendMessage(sid: string, message: { type: RTCSdpType | 'candidate' } & Record<PropertyKey, any>) {
+    return await new Promise<{ username: string; message: unknown }>((resolve, reject) => {
+      this.socket?.emit('send-message', { sid, message }, (res) => {
         resolve(JSON.parse(res))
       })
     })

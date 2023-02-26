@@ -20,7 +20,7 @@ export type SetUserAction = PayloadAction<UserState['value']>
 /* =============== meeting slice =============== */
 
 export interface MeetingState {
-  value: Meeting | null
+  value: Partial<Meeting> | null
 }
 
-export type SetMeetingAction = PayloadAction<MeetingState['value']>
+export type SetMeetingAction = PayloadAction<Partial<MeetingState['value']>>

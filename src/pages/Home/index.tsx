@@ -11,11 +11,11 @@ import Search from 'antd/es/input/Search'
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
-import { signalEmitter } from '../../api/signal'
+import { signalEmitter, signalServer } from '../../api/signal'
 import { BaseContent, BaseFooter, BaseHeader, PageContainer } from '../../components/layout'
 import { Clock, Logo, StyledAvatar, StyledLink } from '../../components/lib'
 import { StyledDivider, StyledParagraph, StyledTitle } from '../../components/typography'
-import { useAppDispatch, useInitSignalServer, useUser } from '../../hooks'
+import { useAppDispatch, useUser } from '../../hooks'
 import { thunkIsFulfilled } from '../../store'
 import { createMeetingThunk, setMeeting } from '../../store/slice/meeting-slice'
 import { logoutThunk } from '../../store/slice/user-slice'
@@ -160,8 +160,9 @@ const NewMeetingModal = () => {
             host_username: user?.username as string,
           }),
         )
-        // 会议创建成功之后，跳转到会议室页面
+        // 会议创建成功之后，通过信令服务器创建一个新的房间
         if (thunkIsFulfilled(action)) {
+          // 进入会议室页
           navigate(ROOM_PATH)
         }
       })
@@ -191,7 +192,7 @@ const NewMeetingModal = () => {
           <Form.Item
             name='name'
             label='Name'
-            initialValue={uuidv4().split('-').slice(0, 2).join('-')}
+            initialValue={uuidv4().split('-')[0]}
             rules={[{ required: true, message: 'Please input the name of meeting!' }]}
           >
             <Input />
@@ -222,7 +223,6 @@ const JoinMeetingModal = () => {
   const meetingIdRef = useRef('')
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const initSignalServer = useInitSignalServer()
 
   const showModal = () => {
     setOpen(true)
@@ -254,16 +254,18 @@ const JoinMeetingModal = () => {
 
         const username = user?.username as string
         const meetingId = meetingIdRef.current
+        const roomName = meetingId
 
         // 初始化信令服务器
-        await initSignalServer(username)
+        await signalServer.init(username)
         // 通过会议 id 加入房间
         try {
-          const { username, userList, updatedMeeting } = await signalEmitter.joinRoom(meetingId, password)
+          const { username, userList } = await signalEmitter.beginJoinRoom(roomName, password)
           console.log(`${username} has joined room.`)
           console.log(`userList: ${userList}`)
-          // 将会议数据保存到 store 中
-          dispatch(setMeeting(updatedMeeting))
+
+          dispatch(setMeeting({ id: meetingId }))
+
           // 进入会议室页
           navigate(ROOM_PATH)
         } catch (e: any) {
