@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import { pcMaps, PeerConnection } from '../api/p2p'
 import { signalListener } from '../api/signal'
 import { meetingSelector, setMeeting } from '../store/slice/meeting-slice'
+import { roomSelector, setRoomState } from '../store/slice/room-slice'
 import { userSelector } from '../store/slice/user-slice'
+import { HandleRemoteStream } from '../types/p2p'
 import { ResetSignalHandlersProps } from '../types/signal'
 import { AppDispatch, RootState } from '../types/store'
 import { HOME_PATH, RoutePath } from '../utils/constant'
@@ -44,6 +46,14 @@ export const useMeeting = () => {
 }
 
 /**
+ * 从 `store` 中读取 `room` 状态
+ *  * @returns `rootState.room`
+ */
+export const useRoomState = () => {
+  return useAppSelector(roomSelector)
+}
+
+/**
  * 验证用户是否已经登录，如果未登录，则执行 `callback` 回调函数，并重定向至 `redirect` 路由
  * @param callback 用户未登录时执行的回调函数
  * @param redirect 用户未登录时重定向的路由
@@ -78,19 +88,26 @@ export const useIsMeetingHost = () => {
 export const useResetSignalHandlers = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const roomState = useRoomState()
 
   /**
    * 加入房间后，重置信令服务器的事件处理函数，以处理 p2p 连接
    * @param peerConnectionConfig 与对端的 p2p 连接的配置
    * @param offerSdpOptions 发送给对端的 OfferSdp 的配置
-   * @param handleRemoteStream 处理对端媒体流的回调函数
    * @returns
    */
-  const resetSignalHandlers = async ({
-    peerConnectionConfig,
-    offerSdpOptions,
-    handleRemoteStream,
-  }: ResetSignalHandlersProps) => {
+  const resetSignalHandlers = async ({ peerConnectionConfig, offerSdpOptions }: ResetSignalHandlersProps = {}) => {
+    /**
+     * 处理对端的媒体流数据
+     */
+    const handleRemoteStream: HandleRemoteStream = ({ sid, remoteStream }) => {
+      dispatch(
+        setRoomState({
+          remoteStreams: [...roomState.remoteStreams, { sid, remoteStream }],
+        }),
+      )
+    }
+
     return signalListener.registerAllHandlers({
       /**
        * 处理其他用户加入房间
@@ -109,16 +126,6 @@ export const useResetSignalHandlers = () => {
         pcMaps.set(username, pc)
         // 与对端进行媒体协商
         void pc.startNegotiate(offerSdpOptions)
-      },
-      handleOtherLeaveCallback: ({ username, userList }) => {
-        console.log(`${username} leave room.`)
-        console.log(userList)
-      },
-      handleRoomClosedCallback: (meeting) => {
-        console.log(`The meeting has ended.`)
-        console.log(meeting)
-        // 回到主页
-        navigate(HOME_PATH)
       },
       /**
        * 处理接收到对端的媒体协商数据
@@ -140,6 +147,16 @@ export const useResetSignalHandlers = () => {
 
         // 媒体协商
         void pc.handleNegotiateMessage(message)
+      },
+      handleOtherLeaveCallback: ({ username, userList }) => {
+        console.log(`${username} leave room.`)
+        console.log(userList)
+      },
+      handleRoomClosedCallback: (meeting) => {
+        console.log(`The meeting has ended.`)
+        console.log(meeting)
+        // 回到主页
+        navigate(HOME_PATH)
       },
     })
   }

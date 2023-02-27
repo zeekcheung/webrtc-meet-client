@@ -1,21 +1,26 @@
 import { message } from 'antd'
 import { PeerConnection } from '.'
+import { createVideoElement } from '../../utils/room'
 
 /**
  * 本地采集的媒体流
  */
 export class LocalStream {
   /**
-   * 本地采集的媒体流的实例
+   * 本地采集的用户媒体流的实例
    */
-  instance: MediaStream | null = null
+  userStream: MediaStream | null = null
+  /**
+   * 本地采集的屏幕媒体流的实例
+   */
+  screenStream: MediaStream | null = null
 
   /**
    * 采集本地的媒体流数据
    * @param constraints 媒体约束对象
    * @returns 采集到的媒体流对象
    */
-  async getLocalMediaStream(constraints: MediaStreamConstraints) {
+  async getLocalUserStream(constraints: MediaStreamConstraints) {
     if (navigator.mediaDevices === undefined || navigator.mediaDevices.getUserMedia === undefined) {
       handleError(`navigator.mediaDevices.getUserMedia() is not supported!`)
     }
@@ -24,7 +29,7 @@ export class LocalStream {
       // 采集本地的媒体流数据
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       // 将媒体流保存到全局，用于 p2p 连接
-      this.instance = mediaStream
+      this.userStream = mediaStream
       return mediaStream
     } catch (error) {
       handleError(error)
@@ -32,7 +37,7 @@ export class LocalStream {
   }
 
   /**
-   * // TODO 采集本地屏幕的媒体数据
+   * 采集本地屏幕的媒体数据
    * @param constraints 媒体约束对象
    * @returns 屏幕数据的媒体流对象
    */
@@ -44,31 +49,43 @@ export class LocalStream {
     try {
       // 采集本地屏幕的媒体流数据
       const mediaStream = await navigator.mediaDevices.getDisplayMedia(constraints)
-      // 将媒体流保存到全局，用于 p2p 连接
-      this.instance = mediaStream
+      // 保存媒体流，用于 p2p 连接
+      this.screenStream = mediaStream
       return mediaStream
     } catch (error) {
       handleError(error)
     }
   }
 
-  /**
-   * 将本地采集到的媒体流数据 `LocalStream.instance` 输出到本地的 `<video>` 元素 `localVideoEl`
-   * @param outputVideoEl 输出媒体流数据的 `<video>` 元素
-   * @returns `localStream`
-   */
-  displayLocalStream(outputVideoEl: HTMLVideoElement) {
-    return (outputVideoEl.srcObject = this.instance)
+  private displayLocalStream(type: 'user' | 'screen', outputVideoEl: HTMLVideoElement) {
+    const mediaStream = type === 'user' ? this.userStream : this.screenStream
+    return (outputVideoEl.srcObject = mediaStream)
   }
 
   /**
-   * 停止采集媒体流
+   * 将本地采集到的媒体流数据 `LocalStream.userStream` 输出到本地的 `<video>` 元素 `localVideoEl`
+   * @param outputVideoEl 输出媒体流数据的 `<video>` 元素
+   * @returns `localStream.userStream`
    */
-  close() {
-    this.instance?.getTracks()?.forEach((track) => {
-      track.stop()
-    })
-    this.instance = null
+  displayUserStream(outputVideoEl: HTMLVideoElement) {
+    this.displayLocalStream('user', outputVideoEl)
+  }
+
+  /**
+   * 将本地采集到的屏幕媒体流数据 `LocalStream.screenStream` 输出到本地的 `<video>` 元素 `localVideoEl`
+   * @param outputVideoEl 输出媒体流数据的 `<video>` 元素
+   * @returns `localStream.screenStream`
+   */
+  displayScreenStream(outputVideoEl: HTMLVideoElement) {
+    this.displayLocalStream('screen', outputVideoEl)
+  }
+
+  /**
+   * 获取正在的使用的媒体流
+   * @returns `localStream.userStream | localStream.screenStream`
+   */
+  private getWorkingStream() {
+    return localVideoEl.srcObject === this.userStream ? this.userStream : this.screenStream
   }
 
   /**
@@ -76,7 +93,7 @@ export class LocalStream {
    * @param pc p2p 连接
    */
   addTracksToPeerConnection(pc: PeerConnection) {
-    const _localStream = this.instance
+    const _localStream = this.getWorkingStream()
     const _pc = pc.instance
 
     if (_localStream !== null && _pc !== null) {
@@ -91,8 +108,19 @@ export class LocalStream {
    * @param kind 媒体轨的类型
    */
   toggleTrack(kind: 'video' | 'audio') {
-    const tracks = this.instance?.getTracks().filter((track) => track.kind === kind)
+    const _localStream = this.getWorkingStream()
+    const tracks = _localStream?.getTracks().filter((track) => track.kind === kind)
     tracks?.forEach((track) => (track.enabled = !track.enabled))
+  }
+
+  /**
+   * 停止采集媒体流
+   */
+  close() {
+    this.userStream?.getTracks()?.forEach((track) => {
+      track.stop()
+    })
+    this.userStream = null
   }
 }
 
@@ -104,3 +132,8 @@ function handleError(error: unknown) {
  * 本地采集的媒体流
  */
 export const localStream = new LocalStream()
+
+/**
+ * 输出本地媒体流的 `video` 元素
+ */
+export const localVideoEl: HTMLVideoElement = createVideoElement()

@@ -1,20 +1,18 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice, SliceCaseReducers } from '@reduxjs/toolkit'
 import { message } from 'antd'
 import { createMeeting } from '../../api/http/meeting'
 import { CreateMeetingDto } from '../../types/meeting'
-import { MeetingState, RootState, SetMeetingAction } from '../../types/store'
+import { MeetingState, RootState } from '../../types/store'
 
-const initialState: MeetingState = {
-  value: null,
-}
+const initialState: MeetingState = null
 
-export const meetingSlice = createSlice({
+export const meetingSlice = createSlice<MeetingState, SliceCaseReducers<MeetingState>>({
   name: 'meeting',
   initialState,
   reducers: {
-    setMeeting(state, action: SetMeetingAction) {
-      const meeting = { ...state.value, ...action.payload }
-      state.value = meeting
+    // @ts-ignore
+    setMeeting(state, action) {
+      return { ...state, ...action.payload }
     },
   },
 })
@@ -39,6 +37,6 @@ export const createMeetingThunk = createAsyncThunk(
 
 export const { setMeeting } = meetingSlice.actions
 
-export const meetingSelector = (state: RootState) => state.meeting.value
+export const meetingSelector = (state: RootState) => state.meeting
 
 export const meetingReducer = meetingSlice.reducer

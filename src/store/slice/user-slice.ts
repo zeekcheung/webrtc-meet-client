@@ -1,19 +1,18 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { message } from 'antd'
 import { getProfile, login, logout, register } from '../../api/http/user'
-import { RootState, SetUserAction, UserState } from '../../types/store'
+import { RootState, UserReducers, UserState } from '../../types/store'
 import { LoginDto, RegisterDto } from '../../types/user'
 
-const initialState: UserState = {
-  value: null,
-}
+const initialState: UserState = null
 
-export const userSlice = createSlice({
+export const userSlice = createSlice<UserState, UserReducers, 'user'>({
   name: 'user',
   initialState,
   reducers: {
-    setUser(state, action: SetUserAction) {
-      state.value = action.payload
+    // @ts-ignore
+    setUser(_state, action) {
+      return action.payload
     },
   },
 })
@@ -74,7 +73,6 @@ export const getProfileThunk = createAsyncThunk('user/getProfile', async (_, { d
   try {
     // 请求用户信息
     const user = await getProfile()
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     if (user) {
       // 全局设置用户信息
       dispatch(setUser(user))
@@ -87,6 +85,6 @@ export const getProfileThunk = createAsyncThunk('user/getProfile', async (_, { d
 
 export const { setUser } = userSlice.actions
 
-export const userSelector = (state: RootState) => state.user.value
+export const userSelector = (state: RootState) => state.user
 
 export const userReducer = userSlice.reducer

@@ -2,9 +2,9 @@
 import { AntDesignOutlined, UserOutlined } from '@ant-design/icons'
 import Icon from '@ant-design/icons/lib/components/Icon'
 import { Avatar, Button, message, Space, Tooltip } from 'antd'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { localStream } from '../../api/p2p/stream'
+import { localStream, localVideoEl } from '../../api/p2p/stream'
 import { signalEmitter, signalServer } from '../../api/signal'
 import { ReactComponent as HomeSvg } from '../../assets/home_fill.svg'
 import { ReactComponent as SettingSvg } from '../../assets/setting-fill.svg'
@@ -26,13 +26,11 @@ import {
   useMeeting,
   useMount,
   useResetSignalHandlers,
+  useRoomState,
   useUser,
 } from '../../hooks'
-import { HOME_PATH } from '../../utils/constant'
-
 import { setMeeting } from '../../store/slice/meeting-slice'
-import { HandleRemoteStream } from '../../types/p2p'
-import { ControlButtonGroupProps, VideoContainerProps } from '../../types/room'
+import { HOME_PATH } from '../../utils/constant'
 import { createVideoElement, freeResource } from '../../utils/room'
 
 export const Room = () => {
@@ -106,28 +104,23 @@ const MainHeader = () => {
 }
 
 const MainContent = () => {
-  // 状态提升
-  const [mediaConstraints, setMediaConstraints] = useState<MediaStreamConstraints>({ video: true, audio: true })
-
   return (
     <MainContentContainer>
-      <VideoContainer mediaConstraints={mediaConstraints} />
-      <ControlButtonGroup mediaConstraints={mediaConstraints} setMediaConstraints={setMediaConstraints} />
+      <VideoContainer />
+      <ControlButtonGroup />
     </MainContentContainer>
   )
 }
 
-const VideoContainer = ({ mediaConstraints }: VideoContainerProps) => {
-  const [remoteStreams, setRemoteStreams] = useState<Array<{ sid: string; remoteStream: MediaStream }>>([])
+const VideoContainer = () => {
   const videoContainerRef = useRef<HTMLDivElement>(null)
 
   const resetSignalHandlers = useResetSignalHandlers()
   const isMeetingHost = useIsMeetingHost()
   const meeting = useMeeting()
   const dispatch = useAppDispatch()
+  const { remoteStreams, mediaConstraints } = useRoomState()
 
-  // 输出本地媒体流数据
-  const localVideoEl = createVideoElement()
   // 输出远端媒体流数据
   const remoteVideoEls = useMemo(() => {
     return remoteStreams.map(({ sid, remoteStream }) => createVideoElement({ srcObject: remoteStream }))
@@ -138,23 +131,18 @@ const VideoContainer = ({ mediaConstraints }: VideoContainerProps) => {
      * 进入会议室时，开始采集媒体数据，并建立 p2p 连接
      */
     async () => {
-      // 处理对端的媒体流
-      const handleRemoteStream: HandleRemoteStream = ({ sid, remoteStream }) => {
-        setRemoteStreams([...remoteStreams, { sid, remoteStream }])
-      }
-
       /**
        * 注意：需要先采集媒体数据，然后再建立 p2p 连接，进行媒体协商
        */
 
       // 采集媒体数据
-      await localStream.getLocalMediaStream(mediaConstraints)
+      await localStream.getLocalUserStream(mediaConstraints)
 
       // 将采集到的媒体数据输出到页面
-      localStream.displayLocalStream(localVideoEl)
+      localStream.displayUserStream(localVideoEl)
 
       // 重置信令服务器的事件处理函数，以处理 p2p 连接
-      void resetSignalHandlers({ handleRemoteStream })
+      void resetSignalHandlers()
 
       /**
        * 如果用户是加入方，则通知房间内其他用户有新用户加入房间
@@ -182,7 +170,7 @@ const VideoContainer = ({ mediaConstraints }: VideoContainerProps) => {
 
     if (videoContainer !== null) {
       // 输出本地和远端的媒体流数据
-      localStream.displayLocalStream(localVideoEl)
+      localStream.displayUserStream(localVideoEl)
       videoContainer.replaceChildren(localVideoEl, ...remoteVideoEls)
     }
   }, [remoteStreams])
@@ -190,10 +178,11 @@ const VideoContainer = ({ mediaConstraints }: VideoContainerProps) => {
   return <div ref={videoContainerRef} style={{ display: 'flex' }} />
 }
 
-const ControlButtonGroup = ({ mediaConstraints, setMediaConstraints }: ControlButtonGroupProps) => {
+const ControlButtonGroup = () => {
   const meeting = useMeeting()
   const navigate = useNavigate()
   const isMeetingHost = useIsMeetingHost()
+  const { mediaConstraints } = useRoomState()
 
   const handleCameraClick = () => localStream.toggleTrack('video')
   const handleMicrophoneClick = () => localStream.toggleTrack('audio')
@@ -211,9 +200,21 @@ const ControlButtonGroup = ({ mediaConstraints, setMediaConstraints }: ControlBu
 
     navigate(HOME_PATH)
   }
-  const handleRecord = () => {
+  const handleRecordClick = () => {
     // TODO 实现录制功能
     console.log('start record')
+  }
+  const handleShareScreen = () => {
+    // 采集本地媒体流
+    void localStream.getLocalScreenStream(mediaConstraints).then((screenStream) => {
+      // 输出屏幕媒体流
+      localStream.displayScreenStream(localVideoEl)
+
+      // 结束屏幕共享时切换回摄像头
+      screenStream?.getVideoTracks()[0].addEventListener('ended', () => {
+        void localStream.getLocalUserStream(mediaConstraints).then(() => localStream.displayUserStream(localVideoEl))
+      })
+    })
   }
 
   return (
@@ -224,11 +225,14 @@ const ControlButtonGroup = ({ mediaConstraints, setMediaConstraints }: ControlBu
       <Button type='primary' onClick={handleMicrophoneClick}>
         麦克风
       </Button>
+      <Button type='primary' onClick={handleRecordClick}>
+        录制
+      </Button>
+      <Button type='primary' onClick={handleShareScreen}>
+        共享屏幕
+      </Button>
       <Button type='primary' onClick={handleLeaveRoom}>
         离开房间
-      </Button>
-      <Button type='primary' onClick={handleRecord}>
-        录音
       </Button>
     </BaseFooter>
   )

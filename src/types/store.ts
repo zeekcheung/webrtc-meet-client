@@ -1,6 +1,7 @@
-import { PayloadAction } from '@reduxjs/toolkit'
+import { CaseReducer, SliceCaseReducers } from '@reduxjs/toolkit'
 import store from '../store'
 import { Meeting } from './meeting'
+import { UserList } from './room'
 import { User } from './user'
 
 /* =============== root slice =============== */
@@ -11,16 +12,46 @@ export type RootState = ReturnType<typeof store.getState>
 
 /* =============== user slice =============== */
 
-export interface UserState {
-  value: User | null
-}
+export type UserState = User | null
 
-export type SetUserAction = PayloadAction<UserState['value']>
+export interface UserReducers extends SliceCaseReducers<UserState> {
+  setUser: CaseReducer<
+    UserState,
+    {
+      payload: Partial<UserState>
+      type: string
+    }
+  >
+}
 
 /* =============== meeting slice =============== */
 
-export interface MeetingState {
-  value: Partial<Meeting> | null
+export type MeetingState = Partial<Meeting> | null
+
+export interface MeetingReducers extends SliceCaseReducers<MeetingState> {
+  setMeeting: CaseReducer<
+    MeetingState,
+    {
+      payload: Partial<MeetingState>
+      type: string
+    }
+  >
 }
 
-export type SetMeetingAction = PayloadAction<Partial<MeetingState['value']>>
+/* =============== room slice =============== */
+
+export interface RoomState {
+  userList: UserList
+  mediaConstraints: MediaStreamConstraints
+  remoteStreams: Array<{ sid: string; remoteStream: MediaStream }>
+}
+
+export interface RoomReducers extends SliceCaseReducers<RoomState> {
+  setRoomState: CaseReducer<
+    RoomState,
+    {
+      payload: Partial<RoomState>
+      type: string
+    }
+  >
+}

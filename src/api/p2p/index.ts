@@ -44,11 +44,11 @@ export class PeerConnection {
 
     this.transmitCandidates()
 
-    if (localStream.instance === null) {
+    if (localStream.userStream === null) {
       void message.error('Can not get local stream, please allow permission.')
       throw new Error('local stream is null.')
     }
-    this.addStreams(localStream.instance)
+    this.addStreams(localStream.userStream)
 
     this.listenRemoteStream(
       handleRemoteStream ??
