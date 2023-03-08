@@ -19,7 +19,7 @@ export function createVideoElement(options?: Partial<HTMLVideoElement>) {
 }
 
 /**
- * 释放资源：
+ * 释放所有资源：
  *
  * 1. 停止采集媒体流
  *
@@ -28,7 +28,7 @@ export function createVideoElement(options?: Partial<HTMLVideoElement>) {
  * 3. 断开与信令服务器的连接
  *
  */
-export function freeResource() {
+export function freeAllResource() {
   // 停止采集媒体流
   localStream.close()
   // 断开 p2p 连接
@@ -36,4 +36,23 @@ export function freeResource() {
   pcMaps.clear()
   // 断开与信令服务器的连接
   signalServer.disconnect()
+}
+
+/**
+ * 释放与 `username` 对端的资源
+ * @param username
+ */
+export function freeResourceWith(username: string) {
+  // 断开 p2p 连接
+  pcMaps.get(username)?.close()
+  // 清除 p2p 连接实例
+  pcMaps.delete(username)
+}
+
+export async function copyContent(content: string) {
+  try {
+    await navigator.clipboard.writeText(content)
+  } catch (error) {
+    console.error('Failed to copy: ', error)
+  }
 }

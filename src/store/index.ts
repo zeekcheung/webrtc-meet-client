@@ -9,6 +9,10 @@ const store = configureStore({
     meeting: meetingReducer,
     room: roomReducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 })
 
 export default store

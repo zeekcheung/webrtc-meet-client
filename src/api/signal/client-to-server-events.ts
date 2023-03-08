@@ -1,5 +1,6 @@
 import { checkSocketConnection, SignalServer } from '.'
 import { Meeting } from '../../types/meeting'
+import { UserList } from '../../types/room'
 
 /**
  * 客户端到信令服务器的事件触发器
@@ -38,7 +39,7 @@ export class SignalEmitter {
    */
   @checkSocketConnection
   async createRoom(roomName: string) {
-    const serializedRoom = await new Promise<string[]>((resolve, reject) => {
+    const serializedRoom = await new Promise<UserList>((resolve, reject) => {
       try {
         this.socket?.emit('create-room', roomName, (serializedRoom) => {
           resolve(JSON.parse(serializedRoom))

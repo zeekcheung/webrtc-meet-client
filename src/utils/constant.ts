@@ -22,3 +22,8 @@ export const TURN_SERVER_PASSWORD = '123456'
 // environment
 export const NODE_ENV = process.env.NODE_ENV
 export const IS_DEV = NODE_ENV === 'development'
+
+// DataChannel label
+export const TEXT_CHANNEL = 'text-channel'
+export const FILE_CHANNEL = 'file-channel'
+export type ChannelLabel = typeof TEXT_CHANNEL | typeof FILE_CHANNEL

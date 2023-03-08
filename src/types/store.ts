@@ -41,9 +41,11 @@ export interface MeetingReducers extends SliceCaseReducers<MeetingState> {
 /* =============== room slice =============== */
 
 export interface RoomState {
+  roomName: string
   userList: UserList
   mediaConstraints: MediaStreamConstraints
   remoteStreams: Array<{ sid: string; remoteStream: MediaStream }>
+  messageList: Array<{ username: string; message: string; date: string }>
 }
 
 export interface RoomReducers extends SliceCaseReducers<RoomState> {

@@ -19,3 +19,16 @@
 .logo-space > .ant-space-item:first-child {
   transform: translateY(0.5rem);
 }
+
+::-webkit-scrollbar {
+  /* 隐藏滚轮 */
+  display: none;
+}
+
+.room-side-footer {
+  width: 100%;
+
+  & > div:first-of-type {
+    width: 90%;
+  }
+}

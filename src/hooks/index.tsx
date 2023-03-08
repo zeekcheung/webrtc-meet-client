@@ -3,13 +3,15 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { pcMaps, PeerConnection } from '../api/p2p'
 import { signalListener } from '../api/signal'
+import store from '../store'
 import { meetingSelector, setMeeting } from '../store/slice/meeting-slice'
-import { roomSelector, setRoomState } from '../store/slice/room-slice'
+import { roomInitialState, roomSelector, setRoomState } from '../store/slice/room-slice'
 import { userSelector } from '../store/slice/user-slice'
-import { HandleRemoteStream } from '../types/p2p'
+import { HandleRemoteChannel, HandleRemoteStream } from '../types/p2p'
 import { ResetSignalHandlersProps } from '../types/signal'
 import { AppDispatch, RootState } from '../types/store'
 import { HOME_PATH, RoutePath } from '../utils/constant'
+import { freeAllResource, freeResourceWith } from '../utils/room'
 
 export const useAppDispatch = () => useDispatch<AppDispatch>()
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
@@ -88,7 +90,6 @@ export const useIsMeetingHost = () => {
 export const useResetSignalHandlers = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const roomState = useRoomState()
 
   /**
    * 加入房间后，重置信令服务器的事件处理函数，以处理 p2p 连接
@@ -101,11 +102,32 @@ export const useResetSignalHandlers = () => {
      * 处理对端的媒体流数据
      */
     const handleRemoteStream: HandleRemoteStream = ({ sid, remoteStream }) => {
-      dispatch(
-        setRoomState({
-          remoteStreams: [...roomState.remoteStreams, { sid, remoteStream }],
-        }),
-      )
+      /**
+       * 除了通过 useSelector Hooks 获取 store 中的状态之外
+       * 还能通过 store.getState Api 获取状态
+       */
+      const roomState = store.getState().room
+      const remoteStreams = [...roomState.remoteStreams, { sid, remoteStream }]
+      dispatch(setRoomState({ remoteStreams }))
+    }
+
+    /**
+     * 处理对端的文本数据
+     */
+    const handleRemoteText: HandleRemoteChannel['handleRemoteText'] = ({ username, message }) => {
+      console.log(`get text message from ${username}: ${message}`)
+
+      const roomState = store.getState().room
+      const messageList = [...roomState.messageList, { username, message, date: new Date().toUTCString() }]
+
+      dispatch(setRoomState({ messageList }))
+    }
+
+    /**
+     * 处理对端的文件数据
+     */
+    const handleRemoteFile: HandleRemoteChannel['handleRemoteFile'] = ({ username, file }) => {
+      console.log(`get file message from ${username}: `, file)
     }
 
     return signalListener.registerAllHandlers({
@@ -118,11 +140,20 @@ export const useResetSignalHandlers = () => {
         console.log(userList)
         // 更新 store 中的 meeting
         dispatch(setMeeting(updatedMeeting))
+        // 更新 store 中的 userList
+        dispatch(setRoomState({ userList }))
         // 建立一个新的 p2p 连接，与该用户所在的对端对应
         if (sid === undefined) {
           throw new Error(`${username}'s sid is undefined.`)
         }
-        const pc = new PeerConnection(sid, peerConnectionConfig, handleRemoteStream)
+        const pc = new PeerConnection({
+          username,
+          sid,
+          connectionConfig: peerConnectionConfig,
+          handleRemoteStream,
+          handleRemoteText,
+          handleRemoteFile,
+        })
         pcMaps.set(username, pc)
         // 与对端进行媒体协商
         void pc.startNegotiate(offerSdpOptions)
@@ -141,7 +172,14 @@ export const useResetSignalHandlers = () => {
          * 在接收到媒体协商数据时，创建对应的 p2p 连接
          */
         if (pc === undefined) {
-          pc = new PeerConnection(sid, peerConnectionConfig, handleRemoteStream)
+          pc = new PeerConnection({
+            username,
+            sid,
+            connectionConfig: peerConnectionConfig,
+            handleRemoteStream,
+            handleRemoteFile,
+            handleRemoteText,
+          })
           pcMaps.set(username, pc)
         }
 
@@ -151,10 +189,18 @@ export const useResetSignalHandlers = () => {
       handleOtherLeaveCallback: ({ username, userList }) => {
         console.log(`${username} leave room.`)
         console.log(userList)
+        freeResourceWith(username)
+        // 更新 store 中的 userList
+        dispatch(setRoomState({ userList }))
       },
       handleRoomClosedCallback: (meeting) => {
         console.log(`The meeting has ended.`)
         console.log(meeting)
+        // 重置 store 中的状态
+        dispatch(setMeeting(null))
+        dispatch(setRoomState(roomInitialState))
+        // 释放资源
+        freeAllResource()
         // 回到主页
         navigate(HOME_PATH)
       },

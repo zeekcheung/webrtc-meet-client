@@ -84,7 +84,7 @@ export class LocalStream {
    * 获取正在的使用的媒体流
    * @returns `localStream.userStream | localStream.screenStream`
    */
-  private getWorkingStream() {
+  private get workingStream() {
     return localVideoEl.srcObject === this.userStream ? this.userStream : this.screenStream
   }
 
@@ -93,7 +93,7 @@ export class LocalStream {
    * @param pc p2p 连接
    */
   addTracksToPeerConnection(pc: PeerConnection) {
-    const _localStream = this.getWorkingStream()
+    const _localStream = this.workingStream
     const _pc = pc.instance
 
     if (_localStream !== null && _pc !== null) {
@@ -108,7 +108,7 @@ export class LocalStream {
    * @param kind 媒体轨的类型
    */
   toggleTrack(kind: 'video' | 'audio') {
-    const _localStream = this.getWorkingStream()
+    const _localStream = this.workingStream
     const tracks = _localStream?.getTracks().filter((track) => track.kind === kind)
     tracks?.forEach((track) => (track.enabled = !track.enabled))
   }

@@ -127,5 +127,47 @@ export const SideContainer = styled(Space)`
   & > .ant-space-item:first-of-type {
     min-height: 6.4rem;
     border-bottom: 1px solid #15191e;
+    display: flex;
   }
+
+  & > .ant-space-item:last-of-type {
+    flex: 1;
+
+    & > div {
+      height: 100%;
+      & > .ant-space-item:first-of-type {
+        width: 100%;
+        height: 60vh;
+        max-height: 60vh;
+        overflow: scroll;
+      }
+      & > .ant-space-item:last-of-type {
+        flex: 1;
+        width: 100%;
+      }
+    }
+  }
+`
+
+export const SideContentContainer = styled(Space)`
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+
+  & .ant-input-textarea-affix-wrapper {
+    border: none;
+    outline: 1.5px solid #343c48;
+    border-radius: 1rem;
+
+    & textarea {
+      background-color: inherit;
+      color: #fff;
+    }
+  }
+`
+
+export const ChatListContainer = styled(Space)`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 `

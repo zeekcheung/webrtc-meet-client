@@ -1,22 +1,27 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
-import { AntDesignOutlined, UserOutlined } from '@ant-design/icons'
+import { PlusSquareOutlined, UploadOutlined } from '@ant-design/icons'
 import Icon from '@ant-design/icons/lib/components/Icon'
-import { Avatar, Button, message, Space, Tooltip } from 'antd'
-import { useEffect, useMemo, useRef } from 'react'
+import { Avatar, Button, message, Space, Tooltip, Upload, UploadFile, UploadProps } from 'antd'
+import TextArea from 'antd/es/input/TextArea'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { pcMaps } from '../../api/p2p'
 import { localStream, localVideoEl } from '../../api/p2p/stream'
 import { signalEmitter, signalServer } from '../../api/signal'
 import { ReactComponent as HomeSvg } from '../../assets/home_fill.svg'
+import { ReactComponent as SendSvg } from '../../assets/send.svg'
 import { ReactComponent as SettingSvg } from '../../assets/setting-fill.svg'
-import { BaseContent, BaseFooter, BaseHeader, PageContainer } from '../../components/layout'
-import { Logo, StyledLink } from '../../components/lib'
+import { BaseFooter, BaseHeader, PageContainer } from '../../components/layout'
+import { Logo, StyledAvatar, StyledLink } from '../../components/lib'
 import {
+  ChatListContainer,
   LayoutContainer,
   MainContainer,
   MainContentContainer,
   RoomButton,
   RoomContainer,
   SideContainer,
+  SideContentContainer,
 } from '../../components/room'
 import { StyledParagraph } from '../../components/typography'
 import {
@@ -30,8 +35,9 @@ import {
   useUser,
 } from '../../hooks'
 import { setMeeting } from '../../store/slice/meeting-slice'
+import { roomInitialState, setRoomState } from '../../store/slice/room-slice'
 import { HOME_PATH } from '../../utils/constant'
-import { createVideoElement, freeResource } from '../../utils/room'
+import { copyContent, createVideoElement, freeAllResource } from '../../utils/room'
 
 export const Room = () => {
   useAuthenticate()
@@ -39,6 +45,7 @@ export const Room = () => {
   const isMeetingHost = useIsMeetingHost()
   const user = useUser()
   const meeting = useMeeting()
+  const dispatch = useAppDispatch()
 
   /**
    * 如果用户是会议主持人的话，在 meeting 创建成功之后，通知信令服务器创建一个新的房间
@@ -53,8 +60,11 @@ export const Room = () => {
         await signalServer.init(username)
 
         // 使用 meeting.id 作为房间号，创建一个新的房间
-        await signalEmitter.createRoom(roomName)
+        const userList = await signalEmitter.createRoom(roomName)
         console.log(`roomName: ${roomName}`)
+
+        // 更新 RoomState 状态
+        dispatch(setRoomState({ roomName, userList }))
       })()
     }
   })
@@ -154,11 +164,8 @@ const VideoContainer = () => {
         dispatch(setMeeting(updatedMeeting))
       }
     },
-    /**
-     * 离开会议室时，释放所有资源
-     */
     () => {
-      freeResource()
+      freeAllResource()
     },
   )
 
@@ -183,6 +190,7 @@ const ControlButtonGroup = () => {
   const navigate = useNavigate()
   const isMeetingHost = useIsMeetingHost()
   const { mediaConstraints } = useRoomState()
+  const dispatch = useAppDispatch()
 
   const handleCameraClick = () => localStream.toggleTrack('video')
   const handleMicrophoneClick = () => localStream.toggleTrack('audio')
@@ -198,6 +206,8 @@ const ControlButtonGroup = () => {
       }
     })()
 
+    // 重置 store 状态
+    dispatch(setRoomState(roomInitialState))
     navigate(HOME_PATH)
   }
   const handleRecordClick = () => {
@@ -242,22 +252,176 @@ const Side = () => {
   return (
     <SideContainer direction='vertical'>
       <SideHeader />
-      <BaseContent>聊天记录</BaseContent>
+      <SideContent />
     </SideContainer>
   )
 }
 
 const SideHeader = () => {
+  const { userList, roomName } = useRoomState()
+  const handleShareRoom = () => {
+    void copyContent(roomName)
+    void message.success('The link of the meeting has been copied successfully! Share it to others!')
+  }
+
   return (
-    <BaseHeader>
-      <Avatar.Group maxCount={2} size='large' maxStyle={{ color: '#f56a00', backgroundColor: '#fde3cf' }}>
-        <Avatar src='https://joesch.moe/api/v1/random' />
-        <Avatar style={{ backgroundColor: '#f56a00' }}>K</Avatar>
-        <Tooltip title='Ant User' placement='top'>
-          <Avatar style={{ backgroundColor: '#87d068' }} icon={<UserOutlined />} />
-        </Tooltip>
-        <Avatar style={{ backgroundColor: '#1890ff' }} icon={<AntDesignOutlined />} />
+    <BaseHeader style={{ alignItems: 'center' }}>
+      <Avatar.Group maxCount={3} size='default' maxStyle={{ color: '#f56a00', backgroundColor: '#fde3cf' }}>
+        {userList.map(({ sid, username }) => {
+          return (
+            <Tooltip title={username} placement='top' key={sid}>
+              <StyledAvatar username={username} />
+            </Tooltip>
+          )
+        })}
       </Avatar.Group>
+
+      <RoomButton type='link' icon={<PlusSquareOutlined />} onClick={handleShareRoom}>
+        Add User
+      </RoomButton>
     </BaseHeader>
+  )
+}
+
+const SideContent = () => {
+  const [message, setMessage] = useState('')
+
+  const dispatch = useAppDispatch()
+  const roomState = useRoomState()
+  const user = useUser()
+
+  const sendMessage = () => {
+    if (message.length === 0) {
+      return
+    }
+
+    // 发送消息
+    const username = user?.username as string
+
+    dispatch(
+      setRoomState({
+        messageList: [...roomState.messageList, { username, message, date: new Date().toUTCString() }],
+      }),
+    )
+
+    pcMaps.forEach((pc) => pc.sendTextMessage(message))
+    setMessage('')
+  }
+
+  return (
+    <SideContentContainer>
+      <ChatHistory />
+      <Space className='room-side-footer'>
+        <InputArea message={message} setMessage={setMessage} sendMessage={sendMessage} />
+        <Space direction='vertical'>
+          <RoomButton type='link' icon={<Icon component={SendSvg} />} onClick={sendMessage}></RoomButton>
+          <SendFileButton />
+        </Space>
+      </Space>
+    </SideContentContainer>
+  )
+}
+
+const ChatHistory = () => {
+  const { messageList } = useRoomState()
+  const user = useUser()
+  const username = user?.username
+
+  return (
+    <ChatListContainer direction='vertical'>
+      {messageList.map(({ username: _username, message, date }, index) => {
+        return (
+          <div key={index}>
+            {_username === username ? (
+              <>
+                <div style={{ float: 'right' }}>
+                  <span style={{ backgroundColor: '#51B56D', marginRight: '2em' }}>{message}</span>
+                  <StyledAvatar username={username} />
+                </div>
+              </>
+            ) : (
+              <>
+                <StyledAvatar username={_username} />
+                <span style={{ backgroundColor: '#252C34', marginRight: '2em' }}>{message}</span>
+              </>
+            )}
+          </div>
+        )
+      })}
+      <div style={{ display: 'none' }}></div>
+    </ChatListContainer>
+  )
+}
+
+const InputArea = ({
+  message,
+  sendMessage,
+  setMessage,
+}: {
+  message: string
+  sendMessage: () => void
+  setMessage: React.Dispatch<React.SetStateAction<string>>
+}) => {
+  const handleMessageChange: React.ChangeEventHandler<HTMLTextAreaElement> = (e) => {
+    setMessage(e.target.value)
+  }
+
+  return (
+    <TextArea
+      rows={2}
+      value={message}
+      onPressEnter={sendMessage}
+      onChange={handleMessageChange}
+      style={{ backgroundColor: 'inherit', color: 'white' }}
+    />
+  )
+}
+
+const SendFileButton = () => {
+  const [fileList, setFileList] = useState<UploadFile[]>([])
+  // const [uploading, setUploading] = useState(false)
+
+  // const handleUpload = () => {
+  //   const formData = new FormData()
+  //   fileList.forEach((file) => {
+  //     formData.append('files[]', file as RcFile)
+  //   })
+  //   setUploading(true)
+  //   // You can use any AJAX library you like
+  //   fetch('https://www.mocky.io/v2/5cc8019d300000980a055e76', {
+  //     method: 'POST',
+  //     body: formData,
+  //   })
+  //     .then(async (res) => await res.json())
+  //     .then(() => {
+  //       setFileList([])
+  //       void message.success('upload successfully.')
+  //     })
+  //     .catch(() => {
+  //       void message.error('upload failed.')
+  //     })
+  //     .finally(() => {
+  //       setUploading(false)
+  //     })
+  // }
+
+  const handleRemove: UploadProps['onRemove'] = (file) => {
+    const index = fileList.indexOf(file)
+    const newFileList = fileList.slice()
+    newFileList.splice(index, 1)
+    setFileList(newFileList)
+  }
+  const handleBeforeUpload: UploadProps['beforeUpload'] = (file) => {
+    setFileList([...fileList, file])
+
+    return false
+  }
+
+  return (
+    <>
+      <Upload fileList={fileList} onRemove={handleRemove} beforeUpload={handleBeforeUpload} showUploadList={false}>
+        <RoomButton type='link' icon={<UploadOutlined />}></RoomButton>
+      </Upload>
+    </>
   )
 }

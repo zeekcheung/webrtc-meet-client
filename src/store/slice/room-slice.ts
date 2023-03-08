@@ -2,9 +2,12 @@ import { createSlice } from '@reduxjs/toolkit'
 import { RoomReducers, RoomState, RootState } from '../../types/store'
 
 const initialState: RoomState = {
+  roomName: '',
   userList: [],
-  mediaConstraints: { video: true, audio: true },
+  // mediaConstraints: { video: true, audio: true },
+  mediaConstraints: { video: true, audio: false },
   remoteStreams: [],
+  messageList: [],
 }
 
 export const roomSlice = createSlice<RoomState, RoomReducers, 'room'>({
@@ -24,3 +27,5 @@ export const { setRoomState } = roomSlice.actions
 export const roomSelector = (state: RootState) => state.room
 
 export const roomReducer = roomSlice.reducer
+
+export const roomInitialState = initialState

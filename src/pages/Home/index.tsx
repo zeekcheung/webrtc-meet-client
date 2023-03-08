@@ -18,6 +18,7 @@ import { StyledDivider, StyledParagraph, StyledTitle } from '../../components/ty
 import { useAppDispatch, useUser } from '../../hooks'
 import { thunkIsFulfilled } from '../../store'
 import { createMeetingThunk, setMeeting } from '../../store/slice/meeting-slice'
+import { setRoomState } from '../../store/slice/room-slice'
 import { logoutThunk } from '../../store/slice/user-slice'
 import { NewMeetFormValue } from '../../types/form'
 import { HOME_PATH, PROFILE_PATH, ROOM_PATH, SIGN_IN_PATH, SIGN_UP_PATH } from '../../utils/constant'
@@ -265,6 +266,7 @@ const JoinMeetingModal = () => {
           console.log(`userList: ${userList}`)
 
           dispatch(setMeeting({ id: meetingId }))
+          dispatch(setRoomState({ roomName, userList }))
 
           // 进入会议室页
           navigate(ROOM_PATH)

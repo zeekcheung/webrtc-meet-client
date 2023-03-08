@@ -1,6 +1,6 @@
 import { ManagerOptions, Socket, SocketOptions } from 'socket.io-client'
 import { Meeting } from './meeting'
-import { HandleRemoteStream } from './p2p'
+import { UserList } from './room'
 
 /**
  * 服务端发送给客户端的所有事件
@@ -79,22 +79,9 @@ export interface ISignalServer {
   disconnect: () => void
 }
 
-export type HandleOtherJoinCallback = (res: {
-  username: string
-  userList: Array<{
-    username: string
-    sid: string
-  }>
-  updatedMeeting: Meeting
-}) => void
+export type HandleOtherJoinCallback = (res: { username: string; userList: UserList; updatedMeeting: Meeting }) => void
 
-export type HandleOtherLeaveCallback = (res: {
-  username: string
-  userList: Array<{
-    username: string
-    sid: string
-  }>
-}) => void
+export type HandleOtherLeaveCallback = (res: { username: string; userList: UserList }) => void
 
 export type HandleRoomClosedCallback = (res: Meeting) => void
 
@@ -110,5 +97,4 @@ export interface RegisterHandlersProps {
 export interface ResetSignalHandlersProps {
   peerConnectionConfig?: RTCConfiguration
   offerSdpOptions?: RTCOfferOptions
-  handleRemoteStream?: HandleRemoteStream
 }

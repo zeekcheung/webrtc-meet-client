@@ -1,9 +1,16 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { message } from 'antd'
-import { HandleRemoteStream } from '../../types/p2p'
+import { HandleRemoteChannel, HandleRemoteStream, PeerConnectionProps } from '../../types/p2p'
 import { Message } from '../../types/signal'
-import { TURN_SERVER_PASSWORD, TURN_SERVER_URL1, TURN_SERVER_URL2, TURN_SERVER_USERNAME } from '../../utils/constant'
+import {
+  ChannelLabel,
+  TURN_SERVER_PASSWORD,
+  TURN_SERVER_URL1,
+  TURN_SERVER_URL2,
+  TURN_SERVER_USERNAME,
+} from '../../utils/constant'
 import { signalEmitter } from '../signal'
+import { DataChannel } from './data-channel'
 import { localStream } from './stream'
 
 /**
@@ -22,6 +29,18 @@ export class PeerConnection {
    * 对端的 `socket.id`
    */
   sid: string
+  /**
+   * 对端的用户名
+   */
+  username: string
+  /**
+   * 传输文本的数据通道
+   */
+  textDataChannel: RTCDataChannel
+  /**
+   * 传输文件的数据通道
+   */
+  fileDataChannel: RTCDataChannel
 
   /**
    * 1. 创建 `RTCPeerConnection` 实例
@@ -37,18 +56,25 @@ export class PeerConnection {
    * @param handleRemoteStream 接收到远端媒体流数据时执行的回调函数
    * @returns p2p 连接的实例
    */
-  constructor(sid: string, connectionConfig?: RTCConfiguration, handleRemoteStream?: HandleRemoteStream) {
+  constructor({
+    sid,
+    username,
+    connectionConfig,
+    handleRemoteStream,
+    handleRemoteText,
+    handleRemoteFile,
+  }: PeerConnectionProps) {
+    this.username = username
+
     this.sid = sid
 
     this.instance = this.createInstance(connectionConfig)
 
-    this.transmitCandidates()
+    this.textDataChannel = DataChannel.init(this, 'text-channel')
 
-    if (localStream.userStream === null) {
-      void message.error('Can not get local stream, please allow permission.')
-      throw new Error('local stream is null.')
-    }
-    this.addStreams(localStream.userStream)
+    this.fileDataChannel = DataChannel.init(this, 'file-channel')
+
+    this.transmitCandidates()
 
     this.listenRemoteStream(
       handleRemoteStream ??
@@ -56,6 +82,14 @@ export class PeerConnection {
           console.log(remoteStreams)
         }),
     )
+
+    this.listenRemoteChannel({ handleRemoteText, handleRemoteFile })
+
+    if (localStream.userStream === null) {
+      void message.error('Can not get local stream, please allow permission.')
+      return
+    }
+    this.addStreams(localStream.userStream)
   }
 
   /**
@@ -63,6 +97,8 @@ export class PeerConnection {
    */
   close() {
     this.instance.close()
+    this.textDataChannel.close()
+    this.fileDataChannel.close()
   }
 
   /**
@@ -206,8 +242,38 @@ export class PeerConnection {
    */
   private listenRemoteStream(handler: HandleRemoteStream) {
     this.instance.ontrack = (e) => {
-      handler({ sid: this.sid, remoteStream: e.streams[0] })
+      if (e.track.kind === 'video') {
+        handler({ sid: this.sid, remoteStream: e.streams[0] })
+      }
     }
+  }
+
+  private listenRemoteChannel({ handleRemoteText, handleRemoteFile }: HandleRemoteChannel) {
+    this.instance.ondatachannel = (e) => {
+      const remoteChannel = e.channel
+      const channelLabel = remoteChannel.label as ChannelLabel
+      // console.log(`pc:${this.sid} received remote channel: `)
+      // console.log(remoteChannel)
+      remoteChannel.binaryType = 'arraybuffer'
+      remoteChannel.onmessage = (e) => {
+        console.log(`receive message from remote channel ${channelLabel}:${remoteChannel.id} of ${this.username}:`)
+        if (channelLabel === 'text-channel') {
+          handleRemoteText?.({
+            username: this.username,
+            message: e.data,
+          })
+        } else if (channelLabel === 'file-channel') {
+          handleRemoteFile?.(e.data)
+        }
+      }
+      remoteChannel.addEventListener('close', () => {
+        console.log(`remote channel:${remoteChannel.id} closed!`)
+      })
+    }
+  }
+
+  sendTextMessage(message: string) {
+    this.textDataChannel.send(message)
   }
 }
 
