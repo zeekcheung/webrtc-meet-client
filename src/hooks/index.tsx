@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { pcMaps, PeerConnection } from '../api/p2p'
+import { pcMap, PeerConnection } from '../api/p2p'
 import { signalListener } from '../api/signal'
 import store from '../store'
 import { meetingSelector, setMeeting } from '../store/slice/meeting-slice'
 import { roomInitialState, roomSelector, setRoomState } from '../store/slice/room-slice'
 import { userSelector } from '../store/slice/user-slice'
-import { HandleRemoteChannel, HandleRemoteStream } from '../types/p2p'
+import { HandleRemoteChannel, HandleRemoteStream, RemoteStream } from '../types/p2p'
 import { ResetSignalHandlersProps } from '../types/signal'
 import { AppDispatch, RootState } from '../types/store'
 import { HOME_PATH, RoutePath } from '../utils/constant'
@@ -101,13 +101,13 @@ export const useResetSignalHandlers = () => {
     /**
      * 处理对端的媒体流数据
      */
-    const handleRemoteStream: HandleRemoteStream = ({ sid, remoteStream }) => {
+    const handleRemoteStream: HandleRemoteStream = ({ username, sid, stream }) => {
       /**
        * 除了通过 useSelector Hooks 获取 store 中的状态之外
        * 还能通过 store.getState Api 获取状态
        */
       const roomState = store.getState().room
-      const remoteStreams = [...roomState.remoteStreams, { sid, remoteStream }]
+      const remoteStreams: RemoteStream[] = [...roomState.remoteStreams, { username, sid, stream }]
       dispatch(setRoomState({ remoteStreams }))
     }
 
@@ -154,7 +154,7 @@ export const useResetSignalHandlers = () => {
           handleRemoteText,
           handleRemoteFile,
         })
-        pcMaps.set(username, pc)
+        pcMap.set(username, pc)
         // 与对端进行媒体协商
         void pc.startNegotiate(offerSdpOptions)
       },
@@ -165,7 +165,7 @@ export const useResetSignalHandlers = () => {
         // console.log(`receive message from: ${username}`)
         // console.log(message)
 
-        let pc = pcMaps.get(username)
+        let pc = pcMap.get(username)
 
         /**
          * 如果没找到对端的 p2p 连接，说明本机是加入方
@@ -180,7 +180,7 @@ export const useResetSignalHandlers = () => {
             handleRemoteFile,
             handleRemoteText,
           })
-          pcMaps.set(username, pc)
+          pcMap.set(username, pc)
         }
 
         // 媒体协商

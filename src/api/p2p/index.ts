@@ -243,7 +243,7 @@ export class PeerConnection {
   private listenRemoteStream(handler: HandleRemoteStream) {
     this.instance.ontrack = (e) => {
       if (e.track.kind === 'video') {
-        handler({ sid: this.sid, remoteStream: e.streams[0] })
+        handler({ username: this.username, sid: this.sid, stream: e.streams[0] })
       }
     }
   }
@@ -280,10 +280,10 @@ export class PeerConnection {
 /**
  * 采用 `MESH` 架构，本端与每个对端都要创建一个 p2p 连接
  *
- * `pcMaps` 保存的是本端与所有对端的 p2p 连接
+ * `pcMap` 保存的是本端与所有对端的 p2p 连接
  *
  * key: `username`
  *
  * value: `PeerConnection`
  */
-export const pcMaps = new Map<string, PeerConnection>()
+export const pcMap = new Map<string, PeerConnection>()

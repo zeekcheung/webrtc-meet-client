@@ -1,6 +1,7 @@
 import { CaseReducer, SliceCaseReducers } from '@reduxjs/toolkit'
 import store from '../store'
 import { Meeting } from './meeting'
+import { RemoteStream } from './p2p'
 import { UserList } from './room'
 import { User } from './user'
 
@@ -44,7 +45,7 @@ export interface RoomState {
   roomName: string
   userList: UserList
   mediaConstraints: MediaStreamConstraints
-  remoteStreams: Array<{ sid: string; remoteStream: MediaStream }>
+  remoteStreams: RemoteStream[]
   messageList: Array<{ username: string; message: string; date: string }>
 }
 

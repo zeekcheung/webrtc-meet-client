@@ -1,6 +1,7 @@
 import styled from '@emotion/styled'
-import { Button, Space } from 'antd'
-import { ReactNode } from 'react'
+import { Button, Space, Tooltip } from 'antd'
+import { CompoundedComponent } from 'antd/es/float-button/interface'
+import { ComponentProps, CSSProperties, ReactNode } from 'react'
 import { BaseContent, BaseHeader } from './layout'
 
 export const RoomContainer = styled(Space)`
@@ -171,3 +172,20 @@ export const ChatListContainer = styled(Space)`
   flex-direction: column;
   height: 100%;
 `
+
+export const ControlButton = ({
+  active,
+  tooltip,
+  ...props
+}: { active: boolean; tooltip: string } & Omit<ComponentProps<CompoundedComponent>, 'shape'>) => {
+  const style: CSSProperties = {
+    color: active ? '#52b76e' : '#8896A4',
+    backgroundColor: '#1E232D',
+  }
+
+  return (
+    <Tooltip title={tooltip}>
+      <Button type='primary' shape='round' style={style} {...props} />
+    </Tooltip>
+  )
+}

@@ -1,11 +1,27 @@
 import { createSlice } from '@reduxjs/toolkit'
 import { RoomReducers, RoomState, RootState } from '../../types/store'
 
+const defaultMediaConstraints: MediaStreamConstraints = {
+  video: {
+    width: 1280,
+    height: 720,
+    frameRate: {
+      ideal: 30,
+      max: 60,
+    },
+    facingMode: 'user',
+  },
+  audio: {
+    autoGainControl: false,
+    echoCancellation: true,
+    noiseSuppression: true,
+  },
+}
+
 const initialState: RoomState = {
   roomName: '',
   userList: [],
-  // mediaConstraints: { video: true, audio: true },
-  mediaConstraints: { video: true, audio: false },
+  mediaConstraints: defaultMediaConstraints,
   remoteStreams: [],
   messageList: [],
 }

@@ -37,7 +37,7 @@ export const SignUp = () => {
           name='sign-up'
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onFinish={handleFinish}
-          style={{ minWidth: '33rem', maxWidth: '100%' }}
+          style={{ width: '33rem' }}
           scrollToFirstError
         >
           <TitleFormItem title='Sign up' />

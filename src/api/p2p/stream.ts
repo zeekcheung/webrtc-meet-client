@@ -84,8 +84,12 @@ export class LocalStream {
    * 获取正在的使用的媒体流
    * @returns `localStream.userStream | localStream.screenStream`
    */
-  private get workingStream() {
-    return localVideoEl.srcObject === this.userStream ? this.userStream : this.screenStream
+  get workingStream() {
+    const workingStream = localVideoEl.srcObject === this.userStream ? this.userStream : this.screenStream
+    if (workingStream === null) {
+      throw new Error('working stream is null.')
+    }
+    return workingStream
   }
 
   /**

@@ -5,7 +5,6 @@ import { StyledParagraph, StyledTitle } from '../../components/typography'
 
 export const ErrorPage = () => {
   const error: any = useRouteError()
-  console.log(error)
 
   return (
     <PageContainer>
