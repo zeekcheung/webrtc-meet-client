@@ -3,7 +3,7 @@ import { useRouteError } from 'react-router-dom'
 import { PageContainer } from '../../components/layout'
 import { StyledParagraph, StyledTitle } from '../../components/typography'
 
-export const ErrorPage = () => {
+const ErrorPage = () => {
   const error: any = useRouteError()
 
   return (
@@ -16,3 +16,5 @@ export const ErrorPage = () => {
     </PageContainer>
   )
 }
+
+export default ErrorPage

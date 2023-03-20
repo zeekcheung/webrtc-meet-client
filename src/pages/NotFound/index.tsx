@@ -5,7 +5,7 @@ import { StyledButton, StyledLink } from '../../components/lib'
 import { StyledParagraph, StyledTitle } from '../../components/typography'
 import { HOME_PATH } from '../../utils/constant'
 
-export const NotFound = () => {
+const NotFound = () => {
   return (
     <PageContainer>
       <StyledSpace>
@@ -24,6 +24,8 @@ export const NotFound = () => {
     </PageContainer>
   )
 }
+
+export default NotFound
 
 const StyledSpace = styled(Space)`
   flex-direction: column;

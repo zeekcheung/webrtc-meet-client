@@ -7,7 +7,7 @@ import { setRoomState } from '../../store/slice/room-slice'
 import { RoomMain } from './main'
 import { RoomSide } from './side'
 
-export const Room = () => {
+const Room = () => {
   useAuthenticate()
 
   const isMeetingHost = useIsMeetingHost()
@@ -46,3 +46,5 @@ export const Room = () => {
     </PageContainer>
   )
 }
+
+export default Room

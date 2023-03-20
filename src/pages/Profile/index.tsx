@@ -3,7 +3,7 @@ import { useAuthenticate, useUser } from '../../hooks'
 import { User } from '../../types/user'
 
 // TODO 实现用户信息展示页
-export const Profile = () => {
+const Profile = () => {
   useAuthenticate()
 
   const user = useUser() as User
@@ -11,3 +11,5 @@ export const Profile = () => {
 
   return <PageContainer>Profile</PageContainer>
 }
+
+export default Profile

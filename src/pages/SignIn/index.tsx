@@ -20,7 +20,7 @@ import { HOME_PATH, SIGN_UP_PATH } from '../../utils/constant'
 
 const SignForm = createSignForm<SignInFormValue>()
 
-export const SignIn = () => {
+const SignIn = () => {
   const [form] = Form.useForm<SignInFormValue>()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -68,3 +68,5 @@ export const SignIn = () => {
     </PageContainer>
   )
 }
+
+export default SignIn

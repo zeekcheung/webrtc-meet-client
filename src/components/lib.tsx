@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { Avatar, AvatarProps, Button } from 'antd'
+import { Avatar, AvatarProps, Button, Spin } from 'antd'
 import { useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
 import logo from '../assets/webrtc-logo.png'
@@ -56,3 +56,11 @@ export const Clock = () => {
   const currTime = `${hour}:${_minute} · ${weekday}, ${day} ${month}`
   return <span style={{ fontWeight: 'bold' }}>{currTime}</span>
 }
+
+const StyledSpin = styled(Spin)`
+  margin-left: 50vw;
+  margin-top: 50vh;
+  transform: translate(-50%, -50%);
+`
+
+export const Loading = () => <StyledSpin tip='Loading' size='large' />

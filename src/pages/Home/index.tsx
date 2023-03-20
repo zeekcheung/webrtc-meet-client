@@ -3,7 +3,7 @@ import { HomeFooter } from './footer'
 import { HomeHeader } from './header'
 import { HomeMain } from './main'
 
-export const Home = () => {
+const Home = () => {
   return (
     <PageContainer>
       <HomeHeader />
@@ -12,3 +12,5 @@ export const Home = () => {
     </PageContainer>
   )
 }
+
+export default Home
